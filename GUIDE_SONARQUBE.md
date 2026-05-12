@@ -19,7 +19,7 @@ Un seul projet Sonar avec une seule clé : **`nafissa-platform`** (`sonar.proj
 4. Générez un **token d’analyse** : *My Account → Security*.  
 5. Dans GitHub : **Repository → Settings → Secrets and variables → Actions → New repository secret**  
    - Nom : `SONAR_TOKEN`  
-   - Valeur : le token SonarCloud.  
+   - Valeur : **uniquement** la chaîne du jeton SonarCloud (ex. `sqp_…`), sans guillemet, sans texte du type « Token : », sans retour ligne. Copiez depuis le navigateur (**pas depuis Word**) : tout caractère accentué (`é`, etc.) dans le secret provoque une erreur du type **`Unexpected char 0xe9 in Authorization value`** lors du scan.  
 6. **`sonar-project.properties`** à la racine doit contenir au minimum :
 
 ```properties
@@ -94,8 +94,17 @@ Pour SonarCloud en local, `sonar.organization` et `sonar.host.url` doivent être
 
 Le workflow utilise **`SonarSource/sonarqube-scan-action@v6`** (version supportée par SonarSource).
 
-**Présentation pour l’équipe** (schémas, glossaire) : voir **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.md`**.
+**Présentation pour l’équipe** : **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.md`** (et version Word **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.docx`**).
+
+---
+
+## 7 — Dépannage CI SonarCloud
+
+### « Failed to query JRE metadata » / « Unexpected char 0xe9 in Authorization value »
+
+Le jeton HTTP ne doit contenir **que des caractères ASCII** (lettres, chiffres, `_`, etc.). Un accent (`é`) ou du texte collé avec le jeton corrompt l’en-tête **Authorization**. **Régénérez** le secret **`SONAR_TOKEN`** sur GitHub en collant **uniquement** la valeur affichée par SonarCloud (copie depuis le navigateur, pas depuis Word).
 
 ---
 
 *Projet : API `backend-node` + interface `frontend`. Configuration Sonar **uniquement** à la racine : `sonar-project.properties`.*
+
