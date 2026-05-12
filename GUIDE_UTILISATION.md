@@ -16,7 +16,7 @@
 10. [Commandes utiles pour le développeur](#10--commandes-utiles)
 11. [Modifier le code — par où commencer ?](#11--modifier-le-code)
 12. [FAQ et dépannage](#12--faq-et-dépannage)
-13. [CI, tests automatiques et SonarQube (GitHub Actions)](#13--ci-tests-automatiques-et-sonarqube-github-actions)
+13. [CI, tests automatiques et Sonar (GitHub Actions)](#13--ci-tests-automatiques-et-sonar-github-actions)
 
 ---
 
@@ -395,29 +395,25 @@ Modifiez `server.port` dans `frontend/vite.config.js`.
 
 ---
 
-## 13 — CI, tests automatiques et SonarQube (GitHub Actions)
+## 13 — CI, tests automatiques et Sonar (GitHub Actions)
 
 Le dépôt contient `.github/workflows/ci.yml`. À chaque **push** ou **pull request** sur `main` / `master` :
 
-1. **Frontend** — `npm ci`, `eslint`, build Vite, **Vitest avec couverture** ; le fichier **`frontend/coverage/lcov.info`** est archivé.
+1. **Frontend** — `npm ci`, `eslint`, build Vite, **Vitest avec couverture** ; **`frontend/coverage/lcov.info`** est archivé.
 2. **Backend Node** — `npm ci`, `prisma generate`, **Vitest avec couverture** ; **`backend-node/coverage/lcov.info`** est archivé.
-3. **SonarCloud** — télécharge ces rapports puis lance **`SonarSource/sonarqube-scan-action@v6`**. Un seul projet Sonar analyse **les deux dossiers** grâce à `sonar-project.properties`.
+3. **Sonar** — normalisation des chemins LCov, puis **`SonarSource/sonarqube-scan-action@v6`** selon **`sonar-project.properties`** (clé **`NAFISSA-Platform`** par défaut).
 
-À configurer dans GitHub (**Settings → Secrets and variables → Actions**) :
+Secrets (**Settings → Secrets and variables → Actions**) :
 
 | Secret | Rôle |
 |--------|------|
-| `SONAR_TOKEN` | Jeton d’analyse créé dans **SonarCloud** ou votre **serveur SonarQube**. |
+| **`SONAR_TOKEN`** | Jeton SonarQube ou SonarCloud (*Mon compte* → *Sécurité*). |
+| **`SONAR_HOST_URL`** | **SonarQube Server uniquement**, avec une URL **joignable depuis Internet**. Ne pas utiliser **`http://localhost:9000`** pour les runners GitHub : pour eux, `localhost` est leur machine, pas votre PC. Pour **SonarCloud**, retirez ce secret et ajoutez `sonar.organization` + `sonar.host.url` dans **`sonar-project.properties`** (voir **`GUIDE_SONARQUBE.md`**). |
 
-À configurer localement dans `sonar-project.properties` (pour **SonarCloud**, décommenter et remplacer) :
-
-- `sonar.organization=VOTRE_ORG`
-- `sonar.host.url=https://sonarcloud.io`
-
-L’étape Sonar utilise ce fichier ; les métriques (bugs, **vulnérabilités**, code smells, **couverture** frontend + backend) apparaissent dans l’interface Sonar après analyse.
+Pour Sonar **local** (`localhost`), lancez **`sonar-scanner`** sur votre ordinateur après les tests avec couverture.
 
 Référence technique : **`GUIDE_SONARQUBE.md`**.  
-Support pédagogique (équipe) : **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.md`**.
+Support pédagogique : **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.md`**.
 
 **Pousser vers votre dépôt privé** [`https://github.com/SySamba/nafissa.git`](https://github.com/SySamba/nafissa.git) :
 

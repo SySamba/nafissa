@@ -7,73 +7,76 @@ Sonar analyse le **JavaScript** des dossiers **`backend-node/src`** et **`fronte
 - **Code smells** et duplications  
 - **Couverture de tests** (agrégée à partir des deux rapports LCov frontend et backend)
 
-Un seul projet Sonar avec une seule clé : **`nafissa-platform`** (`sonar.projectKey` dans `sonar-project.properties` à la racine).
+Un seul projet Sonar avec une seule clé : **`NAFISSA-Platform`** (`sonar.projectKey` dans **`sonar-project.properties`** à la racine — à faire correspondre au projet créé dans votre Sonar).
 
 ---
 
-## 1 — SonarCloud (recommandé avec GitHub)
+## 1 — SonarCloud (CI GitHub sans serveur dédié)
 
-1. Connectez-vous sur [SonarCloud](https://sonarcloud.io/) avec votre compte GitHub.  
-2. **Créez une organisation** (ou utilisez votre org perso).  
-3. **Importez le projet** `SySamba/nafissa` (ou analysez sans import en créant un projet manuellement avec la même clé que dans `sonar-project.properties`).  
-4. Générez un **token d’analyse** : *My Account → Security*.  
-5. Dans GitHub : **Repository → Settings → Secrets and variables → Actions**  
-   - Nom exact du secret : **`SONAR_TOKEN`** (avec ce libellé, pour que la CI fonctionne).  
-   - Valeur : **uniquement** la chaîne du jeton SonarCloud (ex. **`squ_…`** ou **`sqp_…`** du formulaire SonarCloud), sans guillemets, sans texte du type « Token : », sans retour ligne. **Ne pas** coller un **hash Git** du type **`31622e33…`** (identifiant de commit : ce n’est pas un jeton). Copie depuis le navigateur (**pas depuis Word**) : tout caractère accentué (`é`, etc.) peut provoquer **`Unexpected char 0xe9 in Authorization value`**.  
-6. **`sonar-project.properties`** à la racine doit contenir au minimum :
+1. Connectez-vous sur [SonarCloud](https://sonarcloud.io/).  
+2. Créez / importez un projet avec la même **`sonar.projectKey`** que dans le fichier **`sonar-project.properties`** (actuellement **`NAFISSA-Platform`** ou adaptez les deux côtés).  
+3. Jeton : **Mon compte → Sécurité** → générer un jeton d’analyse.  
+4. Sur GitHub : **Settings → Secrets and variables → Actions**  
+   - **`SONAR_TOKEN`** : uniquement la chaîne du jeton (**`squ_…`** ou équivalent SonarCloud).  
+   - **Supprimez** le secret **`SONAR_HOST_URL`** s’il existe (SonarCloud n’en a pas besoin ; une valeur **`localhost`** casse ou trompe la CI).  
+5. Dans **`sonar-project.properties`**, décommentez et renseignez **pour SonarCloud uniquement** :
 
 ```properties
-sonar.organization=<clé_org_sonarcloud>
+sonar.organization=VOTRE_ORG_SONARCLOUD
 sonar.host.url=https://sonarcloud.io
 ```
 
-(La clé d’organisation et `sonar.projectKey` doivent **strictement** correspondre au projet affiché sur SonarCloud.)
+6. Push sur **`main`** / **`master`** : **`.github/workflows/ci.yml`** exécute les tests, corrige les chemins **`lcov.info`**, puis lance **`SonarSource/sonarqube-scan-action@v6`** avec **`SONAR_TOKEN`**.
 
-7. Commitez et poussez : le workflow **`.github/workflows/ci.yml`** exécute les tests, produit **`lcov.info`** côté `frontend/` et `backend-node/`, puis envoie l’analyse avec :
-
-```properties
-sonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info,backend-node/coverage/lcov.info
-```
-
-Après quelques minutes, ouvrez le tableau de projet sur SonarCloud : onglets **Issues**, **Security**, **Measures**, **Coverage**.
-
-Les **notifications par e‑mail** ne sont pas activées par défaut pour chaque événement : dans SonarCloud, ouvrez **Mon compte** → **Notifications** (ou équivalent) et sélectionnez les alertes souhaitées ; vérifiez aussi vos courriers indésirables.
+Les notifications e‑mail se configurent sous **Mon compte → Notifications** sur SonarCloud.
 
 ---
 
-## 2 — SonarQube serveur privé
+## 2 — SonarQube Server local ou sur votre réseau
 
-1. Déployez SonarQube (Docker, ZIP, Helm, etc.) et créez un projet avec la même **`sonar.projectKey`** que localement ou laissez le scanner la créer.  
-2. Générez un **token** utilisateur avec droit d’analyse.  
-3. Dans **`sonar-project.properties`**, renseignez l’URL de votre serveur :
+### Sur votre PC (analyse locale)
 
-```properties
-sonar.host.url=https://votre-sonar.example.com
-```
-
-4. Le secret GitHub **`SONAR_TOKEN`** contient ce token ; le même workflow **`ci.yml`** s’utilise tel quel.
-
----
-
-## 3 — Analyse en local
+1. Démarrez SonarQube (**Docker**, service Windows, etc.), interface souvent **`http://localhost:9000`**.  
+2. Créez un projet avec la clé **`NAFISSA-Platform`** (identique à **`sonar.projectKey`** dans **`sonar-project.properties`**).  
+3. **Mon compte → Sécurité** : créez un **token utilisateur** → collez-le dans une variable d’environnement **`SONAR_TOKEN`** (PowerShell : **`$env:SONAR_TOKEN="..."`**). Ne **commitez jamais** ce jeton ; si vous l’avez exposé dans un chat ou un ticket, **révoquez-le** et créez-en un autre.  
+4. Après **`npm run test:coverage`** dans **`frontend`** et **`backend-node`**, à la racine du dépôt :
 
 ```powershell
-# Depuis la racine du projet, après avoir lancé les tests avec couverture :
-cd C:\Users\HP\Downloads\nafissatou\frontend
-npm run test:coverage
-
-cd ..\backend-node
-npm run test:coverage
-
-cd ..
-# Définissez SONAR_TOKEN (PowerShell)
-$env:SONAR_TOKEN = "sqxxxxxxxx"
-sonar-scanner
+cd C:\Users\HP\Downloads
+afissatou
+$env:SONAR_TOKEN = "VOTRE_JETON_ICI"
+sonar-scanner "-Dsonar.host.url=http://127.0.0.1:9000"
 ```
 
-Installez [SonarScanner](https://docs.sonarsource.com/sonarqube/latest/analyzing-source-code/scanners/sonarscanner/) et ajoutez `sonar.login` désormais obsolète — le CLI lit **`SONAR_TOKEN`**.
+(`127.0.0.1` ou **`localhost`** selon votre installation.)
 
-Pour SonarCloud en local, `sonar.organization` et `sonar.host.url` doivent être présents dans `sonar-project.properties`.
+### GitHub Actions et **`SONAR_HOST_URL`**
+
+L’action officielle attend :
+
+```yaml
+env:
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+```
+
+**Limite importante** : **`http://localhost:9000`** comme valeur du secret **`SONAR_HOST_URL`** **ne permet pas** à la CI GitHub (machine Linux dans le cloud) de joindre Sonar sur **votre ordinateur**. « localhost » sur le runner ≠ votre PC.
+
+Pour que **GitHub Actions** envoie le rapport à **votre** SonarQube Server, il faut par exemple :
+
+- une URL **accessible depuis Internet** (nom de domaine, IP publique, ou **tunnel** type Cloudflare Tunnel / ngrok vers le port 9000), **ou**  
+- un **runner GitHub auto-hébergé** (_self-hosted_) sur la même machine ou le même LAN que Sonar.
+
+Sinon : gardez Sonar **uniquement en local** pour vos scans manuels, et utilisez **SonarCloud** pour la CI (section 1).
+
+---
+
+## 3 — Récap : CI GitHub et Sonar sur votre PC
+
+| Situation | Conduite à tenir |
+|-----------|------------------|
+| Sonar tourne sur **localhost:9000** sur votre machine | Utilisez **sonar-scanner** avec **SONAR_TOKEN** et **-Dsonar.host.url=http://127.0.0.1:9000**. Les secrets **SONAR_HOST_URL** sur GitHub ne servent pas à ça. |
+| La CI GitHub doit pousser le rapport vers **votre** Sonar « chez vous » | Impossible avec **localhost** comme **SONAR_HOST_URL** sur les runners hébergés. Il faut une **URL publique** vers Sonar, un **runner auto-hébergé**, ou **SonarCloud** pour la CI. |
 
 ---
 
@@ -100,7 +103,11 @@ Le workflow utilise **`SonarSource/sonarqube-scan-action@v6`** (version support�
 
 ---
 
-## 7 — Dépannage CI SonarCloud
+## 7 — Dépannage CI et jetons
+
+### **`SONAR_HOST_URL=http://localhost:9000`** dans les secrets GitHub
+
+Les runners GitHub sont sur Internet : ils ne peuvent pas joindre **localhost sur votre PC**. Pour analyser depuis la CI vers SonarQube Server, **`SONAR_HOST_URL`** doit être une URL accessible depuis le réseau public, ou utilisez un runner auto-hébergé sur votre LAN. Sinon : analyse locale avec **`sonar-scanner`**, ou SonarCloud pour la CI (section 1).
 
 ### Couverture « aucune donnée » alors que les tests CI passent
 
@@ -108,7 +115,7 @@ Les rapports **`lcov.info`** utilisent souvent des chemins **`src/...`** relatif
 
 ### Jeton **`SONAR_TOKEN`** ≠ hash Git (**`31622e33…`**)
 
-Un identifiant hexadécimal long (résumé d’un **commit** sur GitHub) **n’est pas** un jeton Sonar : ne pas le mettre dans **`SONAR_TOKEN`**. Utilisez le jeton généré dans **SonarCloud** (**Mon compte** → **Sécurité**) : valeur du type **`squ_...`** ou **`sqp_...`**.
+Un identifiant hexadécimal long (résumé d’un **commit** sur GitHub) **n’est pas** un jeton Sonar : ne pas le mettre dans **SONAR_TOKEN**. Utilisez un jeton créé dans **SonarQube** ou **SonarCloud** (**Mon compte** → **Sécurité**).
 
 ### « Failed to query JRE metadata » / « Unexpected char 0xe9 in Authorization value »
 

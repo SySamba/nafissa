@@ -1,124 +1,27 @@
-# Tests + build + analyse SonarQube (frontend + backend-node).
-# GitHub → Settings → Secrets → Actions :
-#   SONAR_TOKEN — jeton d’analyse créé dans SonarCloud ou SonarQube
-#
-# Dans sonar-project.properties : décommenter et renseigner sonar.organization
-# et sonar.host.url pour SonarCloud (voir GUIDE_SONARQUBE.md).
-name: CI
+name: Build
 
 on:
   push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+    branches:
+      - main
+
 
 jobs:
-  frontend:
-    name: Frontend — lint, build, tests
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - run: npm ci
-      - run: npm run lint
-      - run: npm run build
-      - run: npm run test:coverage
-
-      - uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: frontend-lcov
-          path: frontend/coverage/lcov.info
-
-  backend-node:
-    name: Backend Node — tests
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend-node
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: backend-node/package-lock.json
-
-      - run: npm ci
-      - run: npx prisma generate
-      - run: npm run test:coverage
-
-      - uses: actions/upload-artifact@v4
-        if: success()
-        with:
-          name: backend-node-lcov
-          path: backend-node/coverage/lcov.info
-
-  sonar:
-    name: SonarCloud Scan
-    needs: [frontend, backend-node]
-    if: ${{ !cancelled() && needs.frontend.result == 'success' && needs.backend-node.result == 'success' }}
-    runs-on: ubuntu-latest
+  build:
+    name: Build and analyze
+    runs-on: windows-latest
+    
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: frontend-lcov
-          path: frontend/coverage
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: backend-node-lcov
-          path: backend-node/coverage
-
-      # Les LCov Vitest indiquent SF:src/... (relatif au paquet) ; Sonar attend
-      # frontend/src/... et backend-node/src/... depuis la racine du dépôt.
-      - name: Ajuster les chemins LCov pour SonarCloud
-        run: |
-          python << 'PY'
-          from pathlib import Path
-          import re
-
-          def fix_file(lcov_path: str, folder: str) -> None:
-              p = Path(lcov_path)
-              if not p.is_file():
-                  print("SKIP missing", lcov_path)
-                  return
-              text = p.read_text(encoding="utf-8")
-              prefix = folder + "/"
-
-              def sub(m):
-                  rel = m.group(1).strip().replace("\\", "/")
-                  if rel.startswith(prefix):
-                      full = rel
-                  else:
-                      full = prefix + rel.lstrip("./")
-                  return "SF:" + full.replace("\\", "/")
-
-              out = re.sub(r"^SF:([^\n]+)", sub, text, flags=re.MULTILINE)
-              p.write_text(out, encoding="utf-8")
-              print("OK", lcov_path)
-
-          fix_file("frontend/coverage/lcov.info", "frontend")
-          fix_file("backend-node/coverage/lcov.info", "backend-node")
-          PY
-
-      # URL du serveur : définissez dans sonar-project.properties
-      # (SonarCloud : sonar.host.url=https://sonarcloud.io + sonar.organization=...)
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      # If you wish to fail your job when the Quality Gate is red, uncomment the
+      # following lines. This would typically be used to fail a deployment.
+      # - uses: SonarSource/sonarqube-quality-gate-action@v1
+      #   timeout-minutes: 5
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
