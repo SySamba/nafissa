@@ -75,8 +75,11 @@ Pour SonarCloud en local, `sonar.organization` et `sonar.host.url` doivent être
 
 ## 4 — À ne pas committer
 
-- Ne mettez **jamais** le token Sonar dans `sonar-project.properties` ou dans le code ; utilisez **`SONAR_TOKEN`** (CI ou variable d’environnement locale).  
-- Les dossiers **`coverage/`** et **`node_modules/`** sont listés dans **`.gitignore`**.
+- **Lancez l'analyse régulièrement** : idéalement après chaque grosse modification
+- **Commencez par les bugs** : ce sont les plus critiques
+- **Ne visez pas 0 problèmes** : concentrez-vous sur les problèmes importants (bugs, vulnérabilités)
+- **Ignorez les faux positifs** : SonarQube peut parfois signaler des problèmes qui n'en sont pas. Vous pouvez les marquer comme "Won't Fix" dans l'interface
+- **L'analyse prend 1-3 minutes** : c'est normal, soyez patient
 
 ---
 
