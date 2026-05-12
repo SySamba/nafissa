@@ -32,7 +32,7 @@ Avant de commencer, vous devez avoir installé sur votre machine :
 
 Un éditeur de texte (VS Code / Cursor) et Git pour cloner ou pousser vers GitHub sont utiles.
 
-### 💡 Base de données
+### 💡 Base de données postgress
 
 Installez [PostgreSQL](https://www.postgresql.org/download/) ou utilisez Docker. Créez une base vide nommée `nafissa` et notez utilisateur et mot de passe pour `DATABASE_URL`.
 
