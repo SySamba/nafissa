@@ -152,8 +152,17 @@ def build() -> Document:
 
 def main() -> None:
     doc = build()
-    doc.save(OUT)
-    print(f"OK: {OUT}")
+    candidates = [OUT, OUT.with_stem(f"{OUT.stem}_nouveau")]
+    last_err = None
+    for target in candidates:
+        try:
+            doc.save(target)
+            print(f"OK: {target}")
+            return
+        except PermissionError as e:
+            last_err = e
+            continue
+    raise last_err  # pragma: no cover
 
 
 if __name__ == "__main__":

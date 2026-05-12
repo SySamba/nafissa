@@ -84,6 +84,38 @@ jobs:
           name: backend-node-lcov
           path: backend-node/coverage
 
+      # Les LCov Vitest indiquent SF:src/... (relatif au paquet) ; Sonar attend
+      # frontend/src/... et backend-node/src/... depuis la racine du dépôt.
+      - name: Ajuster les chemins LCov pour SonarCloud
+        run: |
+          python << 'PY'
+          from pathlib import Path
+          import re
+
+          def fix_file(lcov_path: str, folder: str) -> None:
+              p = Path(lcov_path)
+              if not p.is_file():
+                  print("SKIP missing", lcov_path)
+                  return
+              text = p.read_text(encoding="utf-8")
+              prefix = folder + "/"
+
+              def sub(m):
+                  rel = m.group(1).strip().replace("\\", "/")
+                  if rel.startswith(prefix):
+                      full = rel
+                  else:
+                      full = prefix + rel.lstrip("./")
+                  return "SF:" + full.replace("\\", "/")
+
+              out = re.sub(r"^SF:([^\n]+)", sub, text, flags=re.MULTILINE)
+              p.write_text(out, encoding="utf-8")
+              print("OK", lcov_path)
+
+          fix_file("frontend/coverage/lcov.info", "frontend")
+          fix_file("backend-node/coverage/lcov.info", "backend-node")
+          PY
+
       # URL du serveur : définissez dans sonar-project.properties
       # (SonarCloud : sonar.host.url=https://sonarcloud.io + sonar.organization=...)
       - name: SonarCloud Scan

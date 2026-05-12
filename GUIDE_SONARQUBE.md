@@ -17,9 +17,9 @@ Un seul projet Sonar avec une seule clé : **`nafissa-platform`** (`sonar.proj
 2. **Créez une organisation** (ou utilisez votre org perso).  
 3. **Importez le projet** `SySamba/nafissa` (ou analysez sans import en créant un projet manuellement avec la même clé que dans `sonar-project.properties`).  
 4. Générez un **token d’analyse** : *My Account → Security*.  
-5. Dans GitHub : **Repository → Settings → Secrets and variables → Actions → New repository secret**  
-   - Nom : `SONAR_TOKEN`  
-   - Valeur : **uniquement** la chaîne du jeton SonarCloud (ex. `sqp_…`), sans guillemet, sans texte du type « Token : », sans retour ligne. Copiez depuis le navigateur (**pas depuis Word**) : tout caractère accentué (`é`, etc.) dans le secret provoque une erreur du type **`Unexpected char 0xe9 in Authorization value`** lors du scan.  
+5. Dans GitHub : **Repository → Settings → Secrets and variables → Actions**  
+   - Nom exact du secret : **`SONAR_TOKEN`** (avec ce libellé, pour que la CI fonctionne).  
+   - Valeur : **uniquement** la chaîne du jeton SonarCloud (ex. **`squ_…`** ou **`sqp_…`** du formulaire SonarCloud), sans guillemets, sans texte du type « Token : », sans retour ligne. **Ne pas** coller un **hash Git** du type **`31622e33…`** (identifiant de commit : ce n’est pas un jeton). Copie depuis le navigateur (**pas depuis Word**) : tout caractère accentué (`é`, etc.) peut provoquer **`Unexpected char 0xe9 in Authorization value`**.  
 6. **`sonar-project.properties`** à la racine doit contenir au minimum :
 
 ```properties
@@ -36,6 +36,8 @@ sonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info,backend-node/cover
 ```
 
 Après quelques minutes, ouvrez le tableau de projet sur SonarCloud : onglets **Issues**, **Security**, **Measures**, **Coverage**.
+
+Les **notifications par e‑mail** ne sont pas activées par défaut pour chaque événement : dans SonarCloud, ouvrez **Mon compte** → **Notifications** (ou équivalent) et sélectionnez les alertes souhaitées ; vérifiez aussi vos courriers indésirables.
 
 ---
 
@@ -94,11 +96,19 @@ Pour SonarCloud en local, `sonar.organization` et `sonar.host.url` doivent être
 
 Le workflow utilise **`SonarSource/sonarqube-scan-action@v6`** (version supportée par SonarSource).
 
-**Présentation pour l’équipe** : **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.md`** (et version Word **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.docx`**).
+**Présentation pour l’équipe** : **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.md`** (Word : **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.docx`**, ou **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS_nouveau.docx`** si l’original était ouvert au moment de la régénération).
 
 ---
 
 ## 7 — Dépannage CI SonarCloud
+
+### Couverture « aucune donnée » alors que les tests CI passent
+
+Les rapports **`lcov.info`** utilisent souvent des chemins **`src/...`** relatifs au paquet (`frontend/` ou `backend-node/`). Sonar analyse depuis la **racine** du dépôt et attend des chemins du type **`frontend/src/...`**. Le workflow **`.github/workflows/ci.yml`** normalise ces chemins **avant** le scan ; après le prochain push sur `main` / `master`, la carte **Couverture** peut afficher des pourcentages.
+
+### Jeton **`SONAR_TOKEN`** ≠ hash Git (**`31622e33…`**)
+
+Un identifiant hexadécimal long (résumé d’un **commit** sur GitHub) **n’est pas** un jeton Sonar : ne pas le mettre dans **`SONAR_TOKEN`**. Utilisez le jeton généré dans **SonarCloud** (**Mon compte** → **Sécurité**) : valeur du type **`squ_...`** ou **`sqp_...`**.
 
 ### « Failed to query JRE metadata » / « Unexpected char 0xe9 in Authorization value »
 

@@ -1,184 +1,166 @@
 # Présentation — GitHub & SonarCloud (projet NAFISSA)
 
-**Public** : toute personne qui n’a jamais (ou peu) utilisé GitHub Actions ni SonarCloud.  
-**Objectif** : expliquer **pourquoi** ces outils, **comment** ils s’enchaînent dans notre projet, et **quel niveau de résultat** nous visons sur SonarCloud.
+**À qui s’adresse ce document** : dirigeants, chefs de projet, membres de l’équipe technique et toute personne qui doit **comprendre le dispositif qualité**, sans jargon inutile.  
+**Objectif** : expliquer **l’utilité** de ces outils, **le déroulé** d’une mise à jour du code jusqu’au tableau SonarCloud, et **ce que nous considérons comme de bons indicateurs**.
 
 ---
 
-## 1. Pourquoi GitHub ?
+## 1. Attention : erreur très fréquente (secret GitHub)
 
-| Besoin | Ce que GitHub apporte |
-|--------|----------------------|
-| **Historique du code** | Chaque modification est traçée (qui, quand, quel message). Annulation ou comparaison possibles. |
-| **Collaboration** | Plusieurs développeurs travaillent sur les mêmes fichiers avec des branches et des fusions contrôlées. |
-| **Revue avant fusion** | Les *pull requests* permettent de relire le code avant de l’intégrer dans la branche principale. |
-| **CI intégrée** | **GitHub Actions** lance automatiquement des tâches (tests, lint, analyse Sonar) à chaque push ou PR — sans rien installer sur les ordinateurs de l’équipe pour la suite de base. |
+Une chaîne comme **`31622e33adfa9f520f1677659792ec0a12ccf2ab`** est un **identifiant de commit Git** : elle sert à repérer **une version précise du code**. Ce n’est **pas** un mot de passe ni un jeton SonarCloud.
 
-En résumé : GitHub = **référentiel officiel du code** + **automatisation** autour des changements.
+- **À coller dans le secret GitHub `SONAR_TOKEN`** : uniquement le **jeton d’analyse** fourni par SonarCloud — une longue chaîne du type **`squ_...`** ou **`sqp_...`**, sans guillemets ni texte autour (*Mon compte* → **Sécurité** → génération de jeton).
+
+Si vous voyez bien le tableau de projet sur SonarCloud (analyse récente, indicateurs affichés), **l’analyse fonctionne**. Le problème peut venir d’un autre jeton utilisé dans un ancien secret : ce n’est alors pas urgent de modifier quoi que ce soit tant que la CI passe.
 
 ---
 
-## 2. Pourquoi GitHub Actions dans notre projet ?
+## 2. Pourquoi nous utilisons GitHub
 
-Nous voulons **détecter les problèmes tôt**, à chaque changement :
-
-1. Le frontend passe par **eslint**, **build** et **tests avec couverture**.  
-2. Le backend Node passe par **génération Prisma** puis **tests avec couverture**.  
-3. Les rapports de couverture sont conservés puis **SonarScanner** les envoie à SonarCloud.
-
-**Intérêt** : une erreur vue sur GitHub (badge rouge sur la CI) = le problème est identifié **avant** ou **pendant** la revue, pas seulement en production.
-
-Fichier de définition : `.github/workflows/ci.yml`.
+| Besoin organisationnel | Ce que GitHub apporte concrètement |
+|------------------------|-----------------------------------|
+| **Traçabilité** | Qui a modifié quoi et quand ; possibilité de revenir en arrière. |
+| **Travail à plusieurs** | Partage du même code maître, validations avant intégration. |
+| **Validation du code avant fusion** | Les demandes de fusion (*pull requests*) permettent une lecture du changement avant qu’il ne rejoigne la branche principale. |
+| **Automatisation** | **GitHub Actions** peut lancer automatiquement des contrôles (construction, tests, analyse de qualité) à chaque envoi vers le dépôt. |
 
 ---
 
-## 3. Pourquoi SonarCloud ?
+## 3. Pourquoi GitHub Actions sur ce projet ?
 
-Les **tests** répondent à la question : « Le comportement attendu fonctionne-t-il ? »  
-Les **lints** (comme ESLint) répondent à : « Respectons-nous des règles de style évidentes ? »  
+À chaque envoi (**push**) ou mise à jour d’une **demande de fusion**, notre fichier **`.github/workflows/ci.yml`** enchaîne notamment :
 
-**SonarCloud** ajoute une couche :  
+1. **Interface web (*frontend*)** : vérifications de style, construction, tests avec fichier de couverture.  
+2. **API (*backend-node*)** : préparation de la couche données, puis tests avec couverture.  
+3. **Analyse SonarCloud** : envoi du résultat des contrôles et des fichiers de couverture pour alimenter le tableau de bord.
 
-- recherche de **patterns risqués** (sécurité, fiabilité) sur tout le périmètre analysé ;  
-- suivi dans le temps des **bugs**, **vulnérabilités**, **code smells**, **duplications** ;  
-- **couverture de tests** intégrée au tableau de projet (avec nos fichiers LCov frontend + backend) ;  
-- possibilité d’associer une **Quality Gate** (seuils officiels qui passent ou échouent).
-
-Ce n’est **pas** un remplacement des tests ou de la relecture humaine : c’est un **coach mesurable et partagé** par l’équipe.
+**Intérêt** : faire remonter un problème **tôt**, au moment où le changement est proposé, plutôt qu’après mise en ligne.
 
 ---
 
-## 4. Chaîne complète : du push au tableau SonarCloud
+## 4. Pourquoi SonarCloud ?
 
-Représentation simple (sans outil graphique externe) :
+Les **tests** vérifient le **comportement** attendu. Des **contrôles automatiques dans l’éditeur** ou à la chaîne (*lint*) appliquent des règles de forme ou de conventions sur le fichier.
+
+**SonarCloud** complète ces éléments en analysant tout le périmètre déclaré du projet : recherche de **risques de sécurité** et de **fiabilité**, suivi du **nombre d’anomalies**, des **doublons** de code, et de la **couverture par les tests**.
+
+Ce n’est **pas** une garantie à 100 % : il reste la relecture humaine et les tests fonctionnels en conditions réelles. C’est une **boussole commune**, visible par toute l’équipe.
+
+---
+
+## 5. Déroulé — de la mise à jour du code au tableau de bord
 
 ```
-Developer push / Pull Request sur GitHub
+Modification envoyée vers GitHub
               |
               v
 +---------------------------+
-|   GitHub Actions (CI)     |
+|   GitHub Actions          |
 |---------------------------|
-|  Job Frontend             |
-|    lint -> build -> tests -> lcov.info
-|                           |
-|  Job Backend-node         |
-|    prisma generate -> tests -> lcov.info
-|                           |
-|  Job SonarCloud Scan      |
-|    télécharge les lcov    |
-|    sonar-scanner (+ token) |
+|  Interface : tests etc.    |
+|  API       : tests etc. |
+|  Analyse SonarCloud       |
 +-------------+-------------+
               |
               v
-      SonarCloud (API HTTPS)
+      Connexion sécurisée vers SonarCloud
+      (avec le jeton secret SONAR_TOKEN, stocké uniquement dans GitHub)
               |
               v
- Tableau projet : métriques, issues, sécurité, couverture
+ Tableau de bord SonarCloud (indicateurs, anomalies, synthèses)
 ```
 
-**Point clé** : le secret **`SONAR_TOKEN`** (défini dans GitHub → *Settings → Secrets*) est la « carte d’identité » utilisée uniquement dans la CI pour authentifier l’analyse. Il ne doit **jamais** apparaître dans le dépôt.
+Le secret **`SONAR_TOKEN`** défini dans GitHub (**Paramètres** → **Secrets**) sert uniquement à **authentifier l’analyse** ; il ne doit **jamais** figurer dans le code source ni dans une pièce jointe non protégée.
 
 ---
 
-## 5. Indicateurs SonarCloud : comment lire l’interface ?
+## 6. Que signifient les informations sur votre écran SonarCloud ?
 
-### 5.1 Les notes lettres (**A à E**, « Ratings »)
+D’après le type de vue que vous avez (**Quality Gate**, notes par lettre, etc.) :
 
-Sur plusieurs dimensions — **Fiabilité**, **Sécurité**, **Maintenabilité** :
+### 6.1 Quality Gate (« seuil global »)
 
-| Note | Idée vulgarisée |
-|------|----------------|
-| **A** | Excellent : très peu ou pas de points bloquants sur ce volet |
-| **B** | Correct / bon |
-| **C** | Moyen : dette perceptible ; prioriser progressivement les correctifs |
-| **D–E** | Dégradé : il faut planifier une action forte (souvent plusieurs issues groupées) |
+- **Réussi (*Passed*)** : la configuration Sonar utilisée applique plusieurs conditions ; votre dernière analyse les respecte globalement pour la branche considérée (souvent *main* ou la branche liée au dépôt).  
+- **Échoué** : au moins une condition n’est pas remplise ; à traiter selon les règles internes avant une livraison sensible.
 
-### 5.2 **Quality Gate**
+Une **Quality Gate verte** peut coexister avec une **note de sécurité basse (*E*, par exemple)** sur tout le code accumulé sur la durée : les conditions du seuil portent souvent sur le **nouveau** code ou des limites différentes. Il convient donc de lire aussi la section **problèmes de sécurité** et leur gravité (**bloquant**, **élevée**, etc.).
 
-C’est une **liste de conditions** configurée dans SonarCloud (ou le défaut Sonar : *Sonar way*).  
+### 6.2 Les notes lettres (**A** à **E**)
 
-- **PASSED** = l’analyse satisfait tous les seuils du gate (exemple type : pas de nouvelle vulnérabilité bloquante sur le *nouveau* code).  
-- **FAILED** = au moins une condition rouge : à traiter selon les règles de l’équipe avant de considérer la livraison « valide niveau Sonar ».
+Résumées par domaine : **sécurité**, **fiabilité**, **maintenabilité** (les libellés peuvent être en français ou en anglais selon votre interface).
 
-### 5.3 Compteurs d’issues
+| Lettre | Lecture simple |
+|--------|----------------|
+| **A** | Situation forte sur cet axe pour le périmètre mesuré |
+| **B** | Satisfaisante — quelques anomalies à corriger progressivement |
+| **C** | À surveiller — planifier des actions |
+| **D–E** | Situation sérieuse à planifier (surtout sécurité) |
 
-- **Bugs** : comportements jugés incorrects par l’analyseur.  
-- **Vulnérabilités** : problèmes de sécurité relevés par les règles (priorité forte).  
-- **Code smells** : maintenabilité / clarté (souvent moins urgent mais utile pour la dette).
+Une note **« UN » ou non affichée** sur la **maintenabilité** peut apparaître selon versions ou filtres : se fier surtout au **nombre d’anomalies** et à leur évolution dans le temps.
 
----
+### 6.3 Couverture par les tests (« Couverture »)
 
-## 6. Les « bons résultats » que nous visons comme équipe (objectifs pragmatiques)
-
-Les chiffres exacts peuvent être ajustés par le lead technique, mais l’ambition doit être **clair et partagée** :
-
-| Thème | Cible équipe indicative | Commentaire |
-|--------|------------------------|------------|
-| **Quality Gate** | **Passed** régulièrement sur `main` | Si FAILED, corriger avant de fermer une release critique (ou traiter sous 1 sprint selon votre politique). |
-| **Sécurité (note + issues)** | **Note A ou B**, **0 vulnérabilité bloquante** sur le nouveau code | Les hotspots de sécurité doivent être **revus** (acceptés ou corrigés) pour ne pas laisser de dette anonyme. |
-| **Fiabilité** | **Note A ou B**, réduction progressive des bugs | Prioriser tout ce qui est **High / Blocker**. |
-| **Maintenabilité** | Au moins **B** ou plan de réduction du *technical debt ratio* | Ne pas tout « à zéro smell » d’un coup : garder une courbe descendante sprint après sprint. |
-| **Couverture** | Hausse progressive (exemple : viser **> 50 % puis > 65 %** sur le périmètre mesuré après stabilisation du projet) | La couverture seule ne garantit pas la qualité, mais évite les zones sans filet de tests. |
-| **Duplications** | Rester sous le seuil du Quality Gate Sonar ou objectif équipe communiqué | Moins de copier‑coller = moins d’erreurs répliquées. |
-| **Nouveau code** | « Clean as you code » Sonar : peu ou pas de **nouvelle** issue bloquante sur les lignes ajoutées | Principe : **ne pas dégrader** la base en livrant vite. |
-
-> **Réalité** : un ancien projet peut avoir encore des odeurs anciennes ; ce qui compte d’abord, c’est de **stopper la dérive** sur le nouveau code puis de faire baisser l’historique avec le temps.
+Elle mesure **quelle part du code source déclaré** est traversée au moins une fois par les tests automatisés.  
+Si le message indiquait « **aucune donnée** », c’est en général un **écart entre les chemins des fichiers** dans les rapports de tests et ceux analysés — corrigé côté intégration continue pour nos prochains envois ; après le prochain cycle d’analyse, un pourcentage devrait pouvoir apparaître une fois les rapports correctement reliés aux fichiers.
 
 ---
 
-## 7. Rôles précis dans notre dépôt
+## 7. Vers quoi nous tendons comme « bons résultats » (objectifs équipe)
 
-| Élément | Rôle |
-|---------|------|
-| `sonar-project.properties` (**racine**) | Clé projet, organisation SonarCloud, dossiers analysés (`backend-node/src`, `frontend/src`), chemins vers les deux fichiers **`lcov.info`**. |
-| Secret **`SONAR_TOKEN`** | Valeur du token créé dans SonarCloud (compte utilisateur ou jeton projet) — uniquement ASCII, voir § 8. |
+Ces niveaux peuvent être ajustés ensemble avec le pilote technique ; ils servent **d’alignement**.
 
----
+| Domaine | Cible générale | Commentaire |
+|---------|-----------------|------------|
+| **Quality Gate** | Maintenir **Réussi** sur la branche principale | En cas d’échec, traiter avant une livraison critique. |
+| **Sécurité** | Améliorer la note et **réduire** les anomalies **bloquantes** et **élevées** sur le **nouveau** code | Traiter les points **à réviser** (*hotspots*) dans l’interface. |
+| **Fiabilité** | Note **A** ou **B**, baisse du nombre d’anomalies ouvertes | Prioriser le **bloquant** et l’**élevé**. |
+| **Maintenabilité** | Progression maîtrisée | Ne pas viser zéro anomalie immédiatement : **réduire** la dette par itérations. |
+| **Couverture** | Progression sur le long terme (ex. **au‑delà de 50 %** puis objectif plus haut) | Le pourcentage seul ne suffit pas ; il accompagne les tests existants. |
+| **Duplications** | Rester sous les limites fixées par le seuil Sonar ou par l’équipe | Moins de copier‑coller limite les erreurs répétées. |
 
-## 8. Erreur CI : « Unexpected char 0xe9 in Authorization value » (SONAR_TOKEN)
-
-Le caractère **0xe9** correspond à **`é`** (accent). Le scanner construit une en‑tête **Authorization** envoyée à l’API SonarCloud : elle doit être **compatible ASCII** avec le jeton officiel.
-
-**Cause la plus fréquente** : la valeur du secret GitHub **`SONAR_TOKEN`** contient un caractère non ASCII :
-
-- texte français collé avec le jeton (« Jeton : sqp_xxx », « Token d’analyse… », guillemets typographiques **« »**, espaces ou retours lignes parasites) ;
-- copie depuis **Word** ou **PDF**.
-
-**À faire** :
-
-1. SonarCloud → **My Account** → **Security** → générer un nouveau token ou copier celui utilisé pour l’analyse.  
-2. Copier **uniquement** la chaîne du jeton (`sqp_...` ou similaire) dans le presse‑papiers — de préférence depuis le navigateur, pas depuis Word.  
-3. GitHub → **Settings → Secrets and variables → Actions** → **`SONAR_TOKEN`** → **Update** avec cette seule valeur (pas de citation, pas de libellé).  
-4. Relancer la workflow **SonarCloud Scan**.
+**Principe utile** : **ne pas dégrader** le nouveau code — traiter d’abord ce qui est introduit par les derniers changements, puis assainir l’historique.
 
 ---
 
-## 9. Synthèse en une lecture
+## 8. Pourquoi vous ne recevez peut‑être pas d’e‑mail
 
-```
-GitHub   = où vit le code + déclenche la CI après chaque modification.
-Actions  = exécute tests, lint, build, envoie le tout à SonarCloud.
-SonarCloud = tableau de mesure commun (qualité / sécurité / couverture).
-Bons résultats = Gate verte + notes soutenables + aucune nouvelle vulnérabilité bloquante tolérée sur le périmètre livré + couverture qui monte lentement mais sûrement.
-```
+SonarCloud **n’envoie pas systématiquement** un courriel à chaque analyse. Les alertes dépendent de votre **compte** et des **abonnements** :
+
+- **Mon compte** → **Notifications** (ou équivalent) : activer les alertes souhaitées (échec de seuil, nouveaux problèmes, etc.).  
+- Vérifier les **indésirables** (*courrier indésirable*) et l’adresse utilisée pour le compte.
+
+Le suivi le plus fiable reste d’ouvrir le **projet** sur SonarCloud et l’onglet **Actions** sur GitHub pour voir si la dernière exécution s’est bien terminée.
 
 ---
 
-## 10. Ressources internes projet
+## 9. Si l’analyse échoue avec « Unexpected char 0xe9 dans Authorization »
 
-| Document | Usage |
-|---------|-------|
-| `GUIDE_UTILISATION.md` | Installation, démarrage local, vue d’ensemble du dépôt. |
-| `GUIDE_SONARQUBE.md` | Détails techniques Sonar + CI. |
-| `PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.docx` | **Version Word** de cette présentation (mise en page pour réunion / partage). |
+Cela indique un caractère non autorisé (souvent un **é** ou un texte collé par erreur) dans le secret **`SONAR_TOKEN`**. Recréez le jeton SonarCloud, copiez **uniquement** la valeur du jeton depuis le navigateur, et mettez à jour le secret sur GitHub.
 
-Pour **régénérer le Word** après modification du fichier `.md` :
+---
+
+## 10. Synthèse
+
+- **GitHub** centralise le code et déclenche les contrôles automatiques.  
+- **SonarCloud** fournit une **photo** et une **suite** mesurable de qualité et de sécurité.  
+- **De bons résultats** pour nous : seuil principal **Réussi**, amélioration continue des anomalies **les plus graves**, hotspots de sécurité **revus**, et couverture des tests qui **augmente**.
+
+---
+
+## 11. Documents du dépôt
+
+| Fichier | Utilité |
+|---------|---------|
+| `GUIDE_UTILISATION.md` | Installation et utilisation de l’application. |
+| `GUIDE_SONARQUBE.md` | Détail technique Sonar et intégration continue. |
+| `PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.docx` | Version Word pour réunion ou partage (régénérée depuis ce fichier Markdown). |
+
+Régénérer le fichier Word après modification de ce fichier :
 
 ```text
 python scripts/md/_presentation_to_docx.py
 ```
 
----
+Si **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.docx`** est ouvert dans Word (fichier verrouillé), le script crée **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS_nouveau.docx`** à la place.
 
-*NAFISSA — présentation interne (GitHub, GitHub Actions, SonarCloud) — mise à jour continue.*
+*NAFISSA — présentation interne (GitHub et SonarCloud).*
