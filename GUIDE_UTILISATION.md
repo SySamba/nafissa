@@ -401,7 +401,7 @@ Le dépôt contient `.github/workflows/ci.yml`. À chaque **push** ou **pull req
 
 1. **Frontend** — `npm ci`, `eslint`, build Vite, **Vitest avec couverture** ; le fichier **`frontend/coverage/lcov.info`** est archivé.
 2. **Backend Node** — `npm ci`, `prisma generate`, **Vitest avec couverture** ; **`backend-node/coverage/lcov.info`** est archivé.
-3. **Sonar** — télécharge ces rapports puis lance **`SonarSource/sonarqube-scan-action`** à la racine : un seul projet Sonar analyse **les deux dossiers** grâce à `sonar-project.properties`.
+3. **SonarCloud** — télécharge ces rapports puis lance **`SonarSource/sonarqube-scan-action@v6`**. Un seul projet Sonar analyse **les deux dossiers** grâce à `sonar-project.properties`.
 
 À configurer dans GitHub (**Settings → Secrets and variables → Actions**) :
 
@@ -416,7 +416,8 @@ Le dépôt contient `.github/workflows/ci.yml`. À chaque **push** ou **pull req
 
 L’étape Sonar utilise ce fichier ; les métriques (bugs, **vulnérabilités**, code smells, **couverture** frontend + backend) apparaissent dans l’interface Sonar après analyse.
 
-Référence détaillée : **`GUIDE_SONARQUBE.md`**.
+Référence technique : **`GUIDE_SONARQUBE.md`**.  
+Support pédagogique (équipe) : **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.md`**.
 
 **Pousser vers votre dépôt privé** [`https://github.com/SySamba/nafissa.git`](https://github.com/SySamba/nafissa.git) :
 

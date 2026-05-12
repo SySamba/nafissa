@@ -20,12 +20,14 @@ Un seul projet Sonar avec une seule clé : **`nafissa-platform`** (`sonar.proj
 5. Dans GitHub : **Repository → Settings → Secrets and variables → Actions → New repository secret**  
    - Nom : `SONAR_TOKEN`  
    - Valeur : le token SonarCloud.  
-6. Éditez **`sonar-project.properties`** à la racine du dépôt : décommentez et renseignez :
+6. **`sonar-project.properties`** à la racine doit contenir au minimum :
 
 ```properties
-sonar.organization=VOTRE_ORG_SONARCLOUD
+sonar.organization=<clé_org_sonarcloud>
 sonar.host.url=https://sonarcloud.io
 ```
+
+(La clé d’organisation et `sonar.projectKey` doivent **strictement** correspondre au projet affiché sur SonarCloud.)
 
 7. Commitez et poussez : le workflow **`.github/workflows/ci.yml`** exécute les tests, produit **`lcov.info`** côté `frontend/` et `backend-node/`, puis envoie l’analyse avec :
 
@@ -75,12 +77,25 @@ Pour SonarCloud en local, `sonar.organization` et `sonar.host.url` doivent être
 
 ## 4 — À ne pas committer
 
-- **Lancez l'analyse régulièrement** : idéalement après chaque grosse modification
-- **Commencez par les bugs** : ce sont les plus critiques
-- **Ne visez pas 0 problèmes** : concentrez-vous sur les problèmes importants (bugs, vulnérabilités)
-- **Ignorez les faux positifs** : SonarQube peut parfois signaler des problèmes qui n'en sont pas. Vous pouvez les marquer comme "Won't Fix" dans l'interface
-- **L'analyse prend 1-3 minutes** : c'est normal, soyez patient
+- **Jamais** le token Sonar dans les fichiers : uniquement le secret GitHub **`SONAR_TOKEN`** ou une variable d’environnement locale.  
+- **`node_modules/`** et **`coverage/`** : ignorés par `.gitignore` pour ne pas envoyer de bruit à Git ni à Sonar.
 
 ---
 
-*Projet : API `backend-node` + interface `frontend`. Ancien dossier Laravel `backend/` retiré.*
+## 5 — Bonnes pratiques après une analyse
+
+- Relancer Sonar après une grosse refacto ; traiter d’abord **bugs** puis **vulnérabilités**.  
+- Les *faux positifs* peuvent être marqués **Won't fix** dans SonarCloud avec une courte justification pour l’équipe.  
+- L’analyse complète prend souvent **1 à 3 minutes** : c’est normal.
+
+---
+
+## 6 — CI GitHub
+
+Le workflow utilise **`SonarSource/sonarqube-scan-action@v6`** (version supportée par SonarSource).
+
+**Présentation pour l’équipe** (schémas, glossaire) : voir **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.md`**.
+
+---
+
+*Projet : API `backend-node` + interface `frontend`. Configuration Sonar **uniquement** à la racine : `sonar-project.properties`.*

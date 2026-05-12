@@ -65,7 +65,7 @@ jobs:
           path: backend-node/coverage/lcov.info
 
   sonar:
-    name: SonarQube Scan
+    name: SonarCloud Scan
     needs: [frontend, backend-node]
     if: ${{ !cancelled() && needs.frontend.result == 'success' && needs.backend-node.result == 'success' }}
     runs-on: ubuntu-latest
@@ -86,7 +86,7 @@ jobs:
 
       # URL du serveur : définissez dans sonar-project.properties
       # (SonarCloud : sonar.host.url=https://sonarcloud.io + sonar.organization=...)
-      - name: SonarQube Scanner
-        uses: SonarSource/sonarqube-scan-action@v4
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
