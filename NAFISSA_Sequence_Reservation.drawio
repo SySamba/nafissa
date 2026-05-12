@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="seq_reservation" name="Séquence - Réservation">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1500" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Titre -->
+        <mxCell id="title" value="Diagramme de Séquence - Parcours Réservation d'un Service" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="300" y="10" width="500" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- ========== PARTICIPANTS (Headers) ========== -->
+        <mxCell id="P1" value="Maman" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="60" y="60" width="130" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="P2" value="Système NAFISSA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="360" y="60" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="P3" value="Prestataire" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="690" y="60" width="130" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="P4" value="Service Paiement" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=13;" vertex="1" parent="1">
+          <mxGeometry x="980" y="60" width="160" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ========== LIGNES DE VIE (Lifelines) ========== -->
+        <mxCell id="LL1" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;strokeWidth=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="125" y="100" as="sourcePoint"/>
+            <mxPoint x="125" y="1420" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="LL2" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;strokeWidth=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="100" as="sourcePoint"/>
+            <mxPoint x="440" y="1420" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="LL3" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;strokeWidth=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="755" y="100" as="sourcePoint"/>
+            <mxPoint x="755" y="1420" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="LL4" style="endArrow=none;dashed=1;html=1;strokeColor=#999999;strokeWidth=1;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1060" y="100" as="sourcePoint"/>
+            <mxPoint x="1060" y="1420" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========== PHASE 1 : RECHERCHE ========== -->
+        <mxCell id="phase1" value="RECHERCHE" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontStyle=3;fontColor=#6c8ebf;rotation=-90;" vertex="1" parent="1">
+          <mxGeometry x="-10" y="170" width="80" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- 1. Rechercher un service -->
+        <mxCell id="M1" value="1. Rechercher un service" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="125" y="140" as="sourcePoint"/>
+            <mxPoint x="440" y="140" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 2. Afficher les résultats -->
+        <mxCell id="M2" value="2. Afficher les résultats" style="endArrow=open;endFill=0;dashed=1;html=1;strokeColor=#999999;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="190" as="sourcePoint"/>
+            <mxPoint x="125" y="190" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 3. Consulter profil prestataire -->
+        <mxCell id="M3" value="3. Consulter profil prestataire" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="125" y="240" as="sourcePoint"/>
+            <mxPoint x="440" y="240" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 4. Afficher le profil détaillé -->
+        <mxCell id="M4" value="4. Afficher profil détaillé (note, avis)" style="endArrow=open;endFill=0;dashed=1;html=1;strokeColor=#999999;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="290" as="sourcePoint"/>
+            <mxPoint x="125" y="290" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========== PHASE 2 : RÉSERVATION ========== -->
+        <mxCell id="phase2" value="RÉSERVATION" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontStyle=3;fontColor=#82b366;rotation=-90;" vertex="1" parent="1">
+          <mxGeometry x="-10" y="400" width="90" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- 5. Réserver un service -->
+        <mxCell id="M5" value="5. Réserver un service (date, heure)" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="125" y="350" as="sourcePoint"/>
+            <mxPoint x="440" y="350" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 6. Notification nouvelle demande -->
+        <mxCell id="M6" value="6. Notification : nouvelle demande" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="400" as="sourcePoint"/>
+            <mxPoint x="755" y="400" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 7. Accepter la demande -->
+        <mxCell id="M7" value="7. Accepter la demande" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="755" y="450" as="sourcePoint"/>
+            <mxPoint x="440" y="450" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 8. Confirmation réservation -->
+        <mxCell id="M8" value="8. Confirmation de réservation" style="endArrow=open;endFill=0;dashed=1;html=1;strokeColor=#999999;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="500" as="sourcePoint"/>
+            <mxPoint x="125" y="500" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========== PHASE 3 : PAIEMENT ========== -->
+        <mxCell id="phase3" value="PAIEMENT" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontStyle=3;fontColor=#b85450;rotation=-90;" vertex="1" parent="1">
+          <mxGeometry x="-10" y="620" width="80" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- 9. Effectuer le paiement -->
+        <mxCell id="M9" value="9. Effectuer le paiement" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="125" y="560" as="sourcePoint"/>
+            <mxPoint x="440" y="560" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 10. Traiter paiement (escrow) -->
+        <mxCell id="M10" value="10. Traiter paiement (escrow)" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="610" as="sourcePoint"/>
+            <mxPoint x="1060" y="610" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 11. Confirmation paiement -->
+        <mxCell id="M11" value="11. Confirmation paiement reçu" style="endArrow=open;endFill=0;dashed=1;html=1;strokeColor=#999999;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1060" y="660" as="sourcePoint"/>
+            <mxPoint x="440" y="660" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 12. Confirmation paiement à Maman -->
+        <mxCell id="M12" value="12. Confirmation paiement sécurisé" style="endArrow=open;endFill=0;dashed=1;html=1;strokeColor=#999999;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="710" as="sourcePoint"/>
+            <mxPoint x="125" y="710" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 13. Mission confirmée au prestataire -->
+        <mxCell id="M13" value="13. Notification : mission confirmée" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="760" as="sourcePoint"/>
+            <mxPoint x="755" y="760" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========== PHASE 4 : RÉALISATION ========== -->
+        <mxCell id="phase4" value="RÉALISATION" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontStyle=3;fontColor=#bf8f00;rotation=-90;" vertex="1" parent="1">
+          <mxGeometry x="-10" y="870" width="90" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Note séparateur -->
+        <mxCell id="note1" value="--- Réalisation du service par le prestataire ---" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=#FFF9E6;fontSize=10;fontStyle=2;fontColor=#999999;" vertex="1" parent="1">
+          <mxGeometry x="300" y="800" width="280" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- 14. Mission terminée -->
+        <mxCell id="M14" value="14. Signaler mission terminée" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="755" y="850" as="sourcePoint"/>
+            <mxPoint x="440" y="850" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 15. Demande de validation -->
+        <mxCell id="M15" value="15. Demande de validation" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="900" as="sourcePoint"/>
+            <mxPoint x="125" y="900" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 16. Valider la mission -->
+        <mxCell id="M16" value="16. Valider la mission" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="125" y="950" as="sourcePoint"/>
+            <mxPoint x="440" y="950" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========== PHASE 5 : LIBÉRATION PAIEMENT ========== -->
+        <mxCell id="phase5" value="CLÔTURE" style="text;html=1;align=left;verticalAlign=middle;fontSize=10;fontStyle=3;fontColor=#9673a6;rotation=-90;" vertex="1" parent="1">
+          <mxGeometry x="-10" y="1070" width="70" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- 17. Libérer le paiement -->
+        <mxCell id="M17" value="17. Libérer le paiement (escrow)" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="1010" as="sourcePoint"/>
+            <mxPoint x="1060" y="1010" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 18. Paiement transféré au prestataire -->
+        <mxCell id="M18" value="18. Transfert montant (- commission)" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1060" y="1060" as="sourcePoint"/>
+            <mxPoint x="755" y="1060" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 19. Confirmation au système -->
+        <mxCell id="M19" value="19. Confirmation transfert" style="endArrow=open;endFill=0;dashed=1;html=1;strokeColor=#999999;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1060" y="1110" as="sourcePoint"/>
+            <mxPoint x="440" y="1110" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========== PHASE 6 : NOTATION ========== -->
+        <!-- 20. Demander notation -->
+        <mxCell id="M20" value="20. Demander notation" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="1170" as="sourcePoint"/>
+            <mxPoint x="125" y="1170" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 21. Noter le prestataire -->
+        <mxCell id="M21" value="21. Noter le prestataire (1-5 étoiles)" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="125" y="1220" as="sourcePoint"/>
+            <mxPoint x="440" y="1220" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 22. Mise à jour profil prestataire -->
+        <mxCell id="M22" value="22. Mise à jour note prestataire" style="endArrow=block;endFill=1;html=1;strokeColor=#333333;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="1270" as="sourcePoint"/>
+            <mxPoint x="755" y="1270" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 23. Confirmation fin -->
+        <mxCell id="M23" value="23. Transaction terminée" style="endArrow=open;endFill=0;dashed=1;html=1;strokeColor=#999999;fontSize=10;fontStyle=0;align=center;verticalAlign=bottom;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="440" y="1320" as="sourcePoint"/>
+            <mxPoint x="125" y="1320" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- ========== PARTICIPANTS EN BAS (Copie) ========== -->
+        <mxCell id="PB1" value="Maman" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="75" y="1380" width="100" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="PB2" value="Système NAFISSA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="375" y="1380" width="130" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="PB3" value="Prestataire" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="700" y="1380" width="110" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="PB4" value="Service Paiement" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="1380" width="120" height="30" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

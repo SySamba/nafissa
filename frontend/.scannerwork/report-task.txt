@@ -1,0 +1,6 @@
+projectKey=nassiatou-frontend
+serverUrl=http://localhost:9000
+serverVersion=26.3.0.120487
+dashboardUrl=http://localhost:9000/dashboard?id=nassiatou-frontend
+ceTaskId=d0f5eb89-8288-4da2-b8ae-d673cd75f728
+ceTaskUrl=http://localhost:9000/api/ce/task?id=d0f5eb89-8288-4da2-b8ae-d673cd75f728
