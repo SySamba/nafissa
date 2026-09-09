@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -20,11 +21,13 @@ import Colors from '@/constants/Colors';
 export default function LoginScreen() {
   const router = useRouter();
   const { user, loading: authLoading, login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [secure, setSecure] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const looksPhone = /^[+\d]/.test(identifier.trim()) && !identifier.trim().includes('@');
 
   if (!authLoading && user) return <Redirect href="/(tabs)" />;
 
@@ -32,7 +35,7 @@ export default function LoginScreen() {
     setBusy(true);
     setError(null);
     try {
-      await login({ email: email.trim(), password });
+      await login({ login: identifier.trim(), password });
       router.replace('/(tabs)');
     } catch (e: unknown) {
       type AxiosLike = { code?: string; message?: string; response?: { data?: { message?: string } } };
@@ -59,15 +62,23 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 32 }}>
         <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <View style={styles.brandRow}>
-            <View style={styles.logoMark}>
-              <Ionicons name="sparkles" size={22} color="#fff" />
-            </View>
-            <Text style={styles.brand}>Nafissa</Text>
-          </View>
+          <Link href="/" asChild>
+            <Pressable style={styles.backHome} hitSlop={10}>
+              <Ionicons name="arrow-back" size={16} color="rgba(255,255,255,0.85)" />
+              <Text style={styles.backHomeTxt}>Retour à l&apos;accueil</Text>
+            </Pressable>
+          </Link>
+
+          <Image
+            source={require('@/assets/images/logo-nafissa.png')}
+            style={styles.brandLogo}
+            resizeMode="contain"
+          />
 
           <Text style={styles.h1}>Connexion</Text>
-          <Text style={styles.lead}>Accédez à vos réservations et services, partout où vous êtes.</Text>
+          <Text style={styles.lead}>
+            Utilisez l&apos;e-mail créé lors de l&apos;inscription ou le téléphone renseigné sur votre profil web.
+          </Text>
 
           <View style={styles.card}>
             {error ? (
@@ -77,19 +88,25 @@ export default function LoginScreen() {
               </View>
             ) : null}
 
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>E-mail ou numéro de téléphone</Text>
             <View style={styles.inputWrap}>
-              <Ionicons name="mail-outline" size={18} color={Colors.light.textMuted} style={styles.inputIcon} />
+              <Ionicons
+                name={looksPhone ? 'call-outline' : 'mail-outline'}
+                size={18}
+                color={Colors.light.textMuted}
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 autoCapitalize="none"
-                autoComplete="email"
-                keyboardType="email-address"
-                placeholder="vous@email.com"
+                autoCorrect={false}
+                autoComplete="username"
+                keyboardType={looksPhone ? 'phone-pad' : 'email-address'}
+                placeholder="vous@email.com ou +221 …"
                 placeholderTextColor="#94a3b8"
-                value={email}
+                value={identifier}
                 onChangeText={(t) => {
-                  setEmail(t);
+                  setIdentifier(t);
                   setError(null);
                 }}
               />
@@ -110,15 +127,15 @@ export default function LoginScreen() {
                   setError(null);
                 }}
               />
-              <Pressable onPress={() => setSecure((s) => !s)} hitSlop={10} accessibilityLabel={secure ? 'Afficher le mot de passe' : 'Masquer'}>
+              <Pressable
+                onPress={() => setSecure((s) => !s)}
+                hitSlop={10}
+                accessibilityLabel={secure ? 'Afficher le mot de passe' : 'Masquer'}>
                 <Ionicons name={secure ? 'eye-outline' : 'eye-off-outline'} size={20} color={Colors.light.textMuted} />
               </Pressable>
             </View>
 
-            <Pressable
-              style={[styles.cta, busy && styles.ctaDisabled]}
-              onPress={submit}
-              disabled={busy}>
+            <Pressable style={[styles.cta, busy && styles.ctaDisabled]} onPress={submit} disabled={busy}>
               <Text style={styles.ctaText}>{busy ? 'Connexion…' : 'Se connecter'}</Text>
               {!busy ? <Ionicons name="arrow-forward" size={18} color="#fff" /> : null}
             </Pressable>
@@ -131,7 +148,7 @@ export default function LoginScreen() {
               </Text>
             </Pressable>
           </Link>
-          <Text style={styles.hint}>Même compte web & app — mot de passe identique.</Text>
+          <Text style={styles.hint}>Même mot de passe web & mobile — saisissez le même identifiant que sur votre compte.</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -139,7 +156,7 @@ export default function LoginScreen() {
 }
 
 const PRIMARY = Colors.light.primary;
-const PRIMARY_D = '#134A8A';
+const PRIMARY_D = '#333D24';
 
 const styles = StyleSheet.create({
   root: {
@@ -162,32 +179,20 @@ const styles = StyleSheet.create({
     width: 260,
     height: 260,
     borderRadius: 160,
-    backgroundColor: 'rgba(45,142,65,0.25)',
+    backgroundColor: 'rgba(201,161,90,0.25)',
   },
-  brandRow: {
+  brandLogo: { width: 140, height: 140, borderRadius: 32, marginBottom: 20, backgroundColor: 'rgba(255,255,255,0.95)' },
+  backHome: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginBottom: 28,
+    gap: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+    paddingVertical: 6,
   },
-  logoMark: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
-  },
-  brand: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#fff',
-    letterSpacing: -0.5,
-  },
+  backHomeTxt: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600' },
   footerCta: {
-    color: '#bbf7d0',
+    color: '#E7DCC0',
     fontWeight: '800',
     textDecorationLine: 'underline',
   },

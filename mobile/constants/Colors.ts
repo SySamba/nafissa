@@ -1,29 +1,32 @@
-const primary = '#1B5FAD';
-const secondary = '#2D8E41';
-const muted = '#64748B';
+// NAFISSA — Identité visuelle
+const primary = '#44512F';   // Vert olive profond
+const secondary = '#C9A15A'; // Doré sable
+const muted = '#6B6456';
 
 const light = {
   primary,
+  primaryDark: '#333D24',
   secondary,
+  secondaryDark: '#A8843F',
   muted,
-  text: '#0f172a',
-  textMuted: '#64748B',
+  text: '#2A2A22',
+  textMuted: '#6B6456',
   tint: primary,
-  background: '#F8FAFC',
+  background: '#F7F5F2', // Blanc cassé
   surface: '#FFFFFF',
-  border: '#E2E8F0',
-  danger: '#EF4444',
-  tabIconDefault: '#94A3B8',
+  border: '#E5E0D6',
+  danger: '#DC4C3F',
+  tabIconDefault: '#A8A293',
 };
 
 const dark = {
   ...light,
-  text: '#F8FAFC',
-  textMuted: '#94A3B8',
-  background: '#0B1221',
-  surface: '#111827',
-  border: '#1E293B',
-  tabIconDefault: '#64748B',
+  text: '#F7F5F2',
+  textMuted: '#B5AE9E',
+  background: '#1E2117',
+  surface: '#2A2E20',
+  border: '#3A3F2C',
+  tabIconDefault: '#8A8470',
 };
 
 export default {

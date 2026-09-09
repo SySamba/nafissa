@@ -3,7 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { bookingAPI, paymentAPI, adminAPI } from '../api/services';
 import usePolling from '../hooks/usePolling';
-import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, CreditCard, Check, MapPin, FileText, Star, UserPlus } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, CreditCard, Check, MapPin, FileText, Star, UserPlus, AlertTriangle } from 'lucide-react';
+
+const DISPUTE_REASONS = [
+  'Retard ou absence',
+  'Travail non conforme',
+  'Comportement inapproprié',
+  'Problème de paiement',
+  'Autre',
+];
 
 const STATUS_CONFIG = {
   en_attente_admin: { label: 'En attente admin', color: 'bg-amber-100 text-amber-700' },
@@ -52,6 +60,9 @@ export default function BookingDetail() {
   const [showRating, setShowRating] = useState(false);
   const [suggestedProviders, setSuggestedProviders] = useState([]);
   const [providersLoading, setProvidersLoading] = useState(false);
+  const [showDispute, setShowDispute] = useState(false);
+  const [disputeReason, setDisputeReason] = useState(DISPUTE_REASONS[0]);
+  const [disputeText, setDisputeText] = useState('');
 
   const fetchBooking = useCallback(() => {
     bookingAPI.show(id)
@@ -142,6 +153,26 @@ export default function BookingDetail() {
     }
   };
 
+  const handleDispute = async () => {
+    if (disputeText.trim().length < 5) {
+      setMessage({ type: 'error', text: 'Merci de décrire le problème (au moins 5 caractères).' });
+      return;
+    }
+    setActionLoading('dispute');
+    setMessage({ type: '', text: '' });
+    try {
+      await bookingAPI.dispute(id, { reason: disputeReason, message: disputeText.trim() });
+      setMessage({ type: 'success', text: 'Votre signalement a été envoyé à notre équipe. Merci.' });
+      setShowDispute(false);
+      setDisputeText('');
+      setDisputeReason(DISPUTE_REASONS[0]);
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Erreur lors de l\'envoi.' });
+    } finally {
+      setActionLoading('');
+    }
+  };
+
   const handleRelease = async () => {
     if (!booking?.payment?.id) return;
     setActionLoading('release');
@@ -189,20 +220,27 @@ export default function BookingDetail() {
 
       {/* Suivi du workflow */}
       {!isCancelled && (
-        <div className="bg-surface rounded-2xl border border-gray-100 p-6">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Suivi de la demande</h2>
-          <div className="flex items-center gap-1">
-            {WORKFLOW_STEPS.map((step, i) => (
-              <div key={step.key} className="flex-1 flex flex-col items-center">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold mb-1 ${i <= currentStep ? 'bg-primary text-white' : 'bg-gray-200 text-gray-400'}`}>
-                  {i <= currentStep ? <Check size={14} /> : i + 1}
-                </div>
-                <span className={`text-[10px] text-center leading-tight ${i <= currentStep ? 'text-primary font-medium' : 'text-muted'}`}>{step.label}</span>
-                {i < WORKFLOW_STEPS.length - 1 && (
-                  <div className={`hidden sm:block absolute h-0.5 w-full ${i < currentStep ? 'bg-primary' : 'bg-gray-200'}`} />
-                )}
-              </div>
-            ))}
+        <div className="bg-surface rounded-2xl border border-gray-100 p-6 overflow-hidden">
+          <h2 className="text-sm font-semibold text-gray-700 mb-5">Suivi de la demande</h2>
+          <div className="relative">
+            {/* Ligne de fond + progression (centrées sur les pastilles) */}
+            <div className="absolute left-0 right-0 top-3.5 h-1 -translate-y-1/2 rounded-full bg-gray-200" />
+            <div
+              className="absolute left-0 top-3.5 h-1 -translate-y-1/2 rounded-full bg-primary transition-all duration-500"
+              style={{ width: currentStep <= 0 ? '0%' : `${(currentStep / (WORKFLOW_STEPS.length - 1)) * 100}%` }}
+            />
+            <ol className="relative flex justify-between">
+              {WORKFLOW_STEPS.map((step, i) => (
+                <li key={step.key} className="flex w-0 flex-1 flex-col items-center px-0.5">
+                  <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ring-4 ring-surface ${i <= currentStep ? 'bg-primary text-white' : 'bg-gray-200 text-gray-400'}`}>
+                    {i <= currentStep ? <Check size={14} /> : i + 1}
+                  </div>
+                  <span className={`mt-2 text-center text-[10px] leading-tight ${i <= currentStep ? 'font-semibold text-primary' : 'text-muted'}`}>
+                    {step.label}
+                  </span>
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       )}
@@ -500,6 +538,54 @@ export default function BookingDetail() {
           </p>
         )}
       </div>
+
+      {/* Signaler un problème (litige) */}
+      {(isClient || isProvider) && (
+        <div className="bg-surface rounded-2xl border border-gray-100 p-6">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-100 text-danger flex items-center justify-center flex-shrink-0">
+              <AlertTriangle size={20} />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-base font-semibold text-gray-900">Un problème avec cette mission ?</h2>
+              <p className="text-sm text-muted mt-1">
+                Signalez-le à notre équipe : retard, travail non conforme, comportement… Nous interviendrons rapidement pour trouver une solution.
+              </p>
+
+              {!showDispute ? (
+                <button onClick={() => setShowDispute(true)}
+                  className="mt-4 inline-flex items-center gap-2 border-2 border-danger text-danger hover:bg-red-50 px-4 py-2 rounded-xl text-sm font-semibold transition-colors">
+                  <AlertTriangle size={16} /> Signaler un problème
+                </button>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Type de problème</label>
+                    <select value={disputeReason} onChange={(e) => setDisputeReason(e.target.value)}
+                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger">
+                      {DISPUTE_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">Décrivez le problème</label>
+                    <textarea value={disputeText} onChange={(e) => setDisputeText(e.target.value)}
+                      placeholder="Expliquez ce qui s'est passé pour que nous puissions vous aider…" rows={4}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-danger/20 focus:border-danger resize-none" />
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => { setShowDispute(false); setDisputeText(''); }}
+                      className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-muted">Annuler</button>
+                    <button onClick={handleDispute} disabled={actionLoading === 'dispute'}
+                      className="flex-1 flex items-center justify-center gap-2 bg-danger hover:bg-red-600 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
+                      {actionLoading === 'dispute' ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Envoyer le signalement'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

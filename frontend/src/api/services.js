@@ -13,6 +13,7 @@ export const authAPI = {
 export const serviceAPI = {
   list: (params) => apiClient.get('/services', { params }),
   show: (id) => apiClient.get(`/services/${id}`),
+  categoryProviders: (id) => apiClient.get(`/services/${id}/category-providers`),
   create: (data) => apiClient.post('/services', data),
   update: (id, data) => apiClient.put(`/services/${id}`, data),
   remove: (id) => apiClient.delete(`/services/${id}`),
@@ -23,12 +24,18 @@ export const categoryAPI = {
   list: () => apiClient.get('/categories'),
 };
 
+/** Stats publiques (vivier prestataires / offres) pour le tableau de bord cliente */
+export const marketAPI = {
+  summary: () => apiClient.get('/market/summary'),
+};
+
 export const bookingAPI = {
   list: (params) => apiClient.get('/bookings', { params }),
   show: (id) => apiClient.get(`/bookings/${id}`),
   create: (data) => apiClient.post('/bookings', data),
   updateStatus: (id, status) => apiClient.patch(`/bookings/${id}/status`, { status }),
   rate: (id, data) => apiClient.post(`/bookings/${id}/rate`, data),
+  dispute: (id, data) => apiClient.post(`/bookings/${id}/dispute`, data),
 };
 
 export const paymentAPI = {

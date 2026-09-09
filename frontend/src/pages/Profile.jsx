@@ -5,9 +5,9 @@ import { User, Mail, Phone, MapPin, FileText, Check, ArrowLeft } from 'lucide-re
 import { useNavigate } from 'react-router-dom';
 
 const ROLE_LABELS = {
-  maman: 'Cliente (Maman)',
-  etudiant: 'Étudiant(e)',
-  artisan: 'Artisan(e)',
+  maman: 'Cliente',
+  etudiant: 'Prestataire (étudiant)',
+  artisan: 'Prestataire',
   admin: 'Administrateur',
 };
 

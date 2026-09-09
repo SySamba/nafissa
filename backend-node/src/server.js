@@ -15,6 +15,7 @@ import bookingRoutes from './routes/bookings.js';
 import paymentRoutes from './routes/payments.js';
 import notificationRoutes from './routes/notifications.js';
 import adminRoutes from './routes/admin.js';
+import marketRoutes from './routes/market.js';
 
 dotenv.config();
 
@@ -60,6 +61,7 @@ export async function buildApp() {
 
   const apiOpts = { prefix: '/api' };
   await fastify.register(authRoutes, apiOpts);
+  await fastify.register(marketRoutes, apiOpts);
   await fastify.register(serviceRoutes, apiOpts);
   await fastify.register(bookingRoutes, apiOpts);
   await fastify.register(paymentRoutes, apiOpts);

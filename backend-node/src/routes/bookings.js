@@ -256,6 +256,56 @@ export default async function bookingRoutes(fastify) {
       booking: updated,
     });
   });
+
+  /** Signaler un problème (litige) sur une réservation. */
+  fastify.post('/bookings/:id/dispute', { preHandler: authMiddleware }, async (request, reply) => {
+    let id;
+    try {
+      id = BigInt(request.params.id);
+    } catch {
+      return reply.code(400).send({ message: 'Identifiant invalide.' });
+    }
+    const schema = z.object({
+      reason: z.string().max(120).optional().nullable(),
+      message: z.string().min(5).max(2000),
+    });
+    const parsed = schema.safeParse(request.body || {});
+    if (!parsed.success) {
+      return reply.code(422).send({ message: 'Merci de décrire le problème (au moins 5 caractères).' });
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: { service: true, client: true, provider: true },
+    });
+    if (!booking) return reply.code(404).send({ message: 'Réservation introuvable.' });
+
+    const u = request.user;
+    const isParty = booking.clientId === u.id || booking.providerId === u.id;
+    if (!isParty && u.role !== 'admin') {
+      return reply.code(403).send({ message: 'Non autorisé.' });
+    }
+
+    const reason = parsed.data.reason?.trim() || 'Problème signalé';
+    const serviceName = booking.service?.title || 'Service';
+    const link = bookingDetailPath(booking.id);
+
+    await notifyAdmins(
+      'dispute',
+      `Litige · ${reason}`,
+      `${u.name} a signalé un problème sur « ${serviceName} » (demande #${booking.id}) : ${parsed.data.message}`,
+      link,
+    );
+    await notify(
+      u.id,
+      'dispute',
+      'Signalement bien reçu',
+      `Votre signalement concernant « ${serviceName} » a été transmis à l'équipe NAFISSA. Nous revenons vers vous au plus vite.`,
+      link,
+    );
+
+    return reply.send({ message: 'Votre signalement a été envoyé à notre équipe. Merci.' });
+  });
 }
 
 async function sendStatusNotifications(booking, newStatus) {

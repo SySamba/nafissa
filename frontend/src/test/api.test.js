@@ -11,7 +11,7 @@ vi.mock('../api/client', () => ({
 }));
 
 import apiClient from '../api/client';
-import { authAPI, serviceAPI, bookingAPI, paymentAPI, adminAPI } from '../api/services';
+import { authAPI, serviceAPI, bookingAPI, paymentAPI, adminAPI, marketAPI } from '../api/services';
 
 describe('API Services', () => {
   beforeEach(() => {
@@ -26,7 +26,7 @@ describe('API Services', () => {
     });
 
     it('calls login endpoint', () => {
-      const data = { email: 'test@test.com', password: 'pass' };
+      const data = { login: 'test@test.com', password: 'pass' };
       authAPI.login(data);
       expect(apiClient.post).toHaveBeenCalledWith('/auth/login', data);
     });
@@ -53,6 +53,11 @@ describe('API Services', () => {
       expect(apiClient.get).toHaveBeenCalledWith('/services/1');
     });
 
+    it('calls category providers endpoint', () => {
+      serviceAPI.categoryProviders(12);
+      expect(apiClient.get).toHaveBeenCalledWith('/services/12/category-providers');
+    });
+
     it('calls create endpoint', () => {
       const data = { title: 'Test' };
       serviceAPI.create(data);
@@ -62,6 +67,13 @@ describe('API Services', () => {
     it('calls mine endpoint', () => {
       serviceAPI.mine();
       expect(apiClient.get).toHaveBeenCalledWith('/my-services');
+    });
+  });
+
+  describe('marketAPI', () => {
+    it('calls summary endpoint', () => {
+      marketAPI.summary();
+      expect(apiClient.get).toHaveBeenCalledWith('/market/summary');
     });
   });
 

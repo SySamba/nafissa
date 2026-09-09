@@ -1,19 +1,22 @@
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
-import { Redirect } from 'expo-router';
+import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
+import { Redirect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useAuth } from '@/context/AuthContext';
 import { API_ORIGIN } from '@/lib/api';
 import Colors from '@/constants/Colors';
 
+const PUBLIC_SITE_URL = process.env.EXPO_PUBLIC_SITE_URL ?? 'http://localhost:5173';
+
 const ROLE_LABEL: Record<string, string> = {
   maman: 'Cliente',
-  etudiant: 'Étudiant',
-  artisan: 'Artisan',
+  etudiant: 'Prestataire (étudiant)',
+  artisan: 'Prestataire',
   admin: 'Administrateur',
 };
 
 export default function ProfileTab() {
+  const router = useRouter();
   const { user, logout, loading } = useAuth();
 
   if (loading) return null;
@@ -59,16 +62,38 @@ export default function ProfileTab() {
         <Row icon="location-outline" label="Adresse" value={user.profile?.address || 'Non renseignée'} last />
       </View>
 
+      <TouchableOpacity
+        style={styles.editBtn}
+        onPress={() => router.push('/profile/edit')}
+        activeOpacity={0.85}>
+        <Ionicons name="create-outline" size={20} color="#fff" />
+        <Text style={styles.editTxt}>Modifier mon profil</Text>
+      </TouchableOpacity>
+
       {user?.role === 'admin' ? (
         <Text style={styles.adminNote}>Compte administrateur : actions avancées restent disponibles sur le web.</Text>
       ) : null}
+
+      <TouchableOpacity
+        style={styles.siteBtn}
+        onPress={() => Linking.openURL(PUBLIC_SITE_URL)}
+        activeOpacity={0.85}>
+        <Ionicons name="open-outline" size={22} color={Colors.light.primary} />
+        <View style={{ flex: 1, marginLeft: 12, minWidth: 0 }}>
+          <Text style={styles.siteBtnTitle}>Voir le site web</Text>
+          <Text style={styles.siteUrl} numberOfLines={1}>
+            {PUBLIC_SITE_URL}
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={Colors.light.textMuted} />
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.logoutBtn} onPress={signOut} activeOpacity={0.85}>
         <Ionicons name="log-out-outline" size={20} color={Colors.light.danger} />
         <Text style={styles.logoutTxt}>Déconnexion</Text>
       </TouchableOpacity>
 
-      <Text style={styles.foot}>Nafissa · même compte que le site web</Text>
+      <Text style={styles.foot}>NAFISSA · même identifiants que le site web</Text>
     </ScrollView>
   );
 }
@@ -121,7 +146,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: '#E8EEF9',
+    backgroundColor: '#ECEDE3',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
@@ -146,6 +171,18 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.secondary + '44',
   },
   roleTxt: { fontWeight: '700', color: Colors.light.secondary, fontSize: 12 },
+  editBtn: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.light.primary,
+    borderRadius: 16,
+    paddingVertical: 15,
+  },
+  editTxt: { fontSize: 16, fontWeight: '800', color: '#fff' },
   section: {
     marginHorizontal: 20,
     marginTop: 18,
@@ -190,9 +227,32 @@ const styles = StyleSheet.create({
     color: Colors.light.textMuted,
     lineHeight: 19,
   },
+  siteBtn: {
+    marginHorizontal: 16,
+    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 18,
+    backgroundColor: Colors.light.surface,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  siteBtnTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.light.text,
+  },
+  siteUrl: {
+    fontSize: 12,
+    marginTop: 2,
+    color: Colors.light.primary,
+    fontWeight: '500',
+  },
   logoutBtn: {
     marginHorizontal: 16,
-    marginTop: 28,
+    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,16 +15,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 
 import { useAuth } from '@/context/AuthContext';
-import { API_BASE_URL } from '@/lib/api';
+import { api, API_BASE_URL } from '@/lib/api';
 import Colors from '@/constants/Colors';
+import { categoryVisual } from '@/constants/categoryImages';
+
+type Category = { id: string | number; name: string; icon?: string | null };
 
 const PRIMARY = Colors.light.primary;
-const PRIMARY_D = '#134A8A';
+const PRIMARY_D = '#333D24';
 
 const ROLES = [
-  { value: 'maman' as const, label: 'Cliente' },
-  { value: 'etudiant' as const, label: 'Étudiant' },
-  { value: 'artisan' as const, label: 'Artisan' },
+  { value: 'maman' as const, label: 'Client' },
+  { value: 'artisan' as const, label: 'Prestataire' },
 ];
 
 export default function RegisterScreen() {
@@ -39,6 +42,22 @@ export default function RegisterScreen() {
   const [secure, setSecure] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    api
+      .get<{ categories?: Category[] }>('/categories')
+      .then(({ data }) => setCategories(data.categories ?? []))
+      .catch(() => {});
+  }, []);
+
+  const toggleCategory = (id: string | number) => {
+    const key = String(id);
+    setSelectedCategories((prev) =>
+      prev.includes(key) ? prev.filter((c) => c !== key) : [...prev, key]
+    );
+  };
 
   if (!authLoading && user) return <Redirect href="/(tabs)" />;
 
@@ -54,6 +73,7 @@ export default function RegisterScreen() {
         phone: phone.trim() || undefined,
         address: address.trim() || undefined,
         role,
+        category_ids: role === 'artisan' && selectedCategories.length ? selectedCategories : undefined,
       });
       router.replace('/(tabs)');
     } catch (e: unknown) {
@@ -97,15 +117,30 @@ export default function RegisterScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1, paddingHorizontal: 24, paddingVertical: 24 }}>
         <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <View style={styles.brandRow}>
-            <View style={styles.logoMark}>
-              <Ionicons name="sparkles" size={22} color="#fff" />
-            </View>
-            <Text style={styles.brand}>Nafissa</Text>
-          </View>
+          <Link href="/" asChild>
+            <Pressable style={styles.backHome} hitSlop={10}>
+              <Ionicons name="arrow-back" size={16} color="rgba(255,255,255,0.85)" />
+              <Text style={styles.backHomeTxt}>Retour à l&apos;accueil</Text>
+            </Pressable>
+          </Link>
+
+          <Image
+            source={require('@/assets/images/logo-nafissa.png')}
+            style={styles.brandLogo}
+            resizeMode="contain"
+          />
 
           <Text style={styles.h1}>Créer un compte</Text>
-          <Text style={styles.lead}>Même compte que sur le site. Les pièces d&apos;identité peuvent être complétées plus tard sur le web si besoin.</Text>
+          <Text style={styles.lead}>
+            Client ou prestataire : même compte gratuit qu&apos;en ligne. Les prestataires complètent leurs pièces
+            d&apos;identité sur le navigateur après l&apos;inscription.
+          </Text>
+
+          <Image
+            source={require('@/assets/images/hero-nafissa.jpg')}
+            style={styles.heroImg}
+            resizeMode="cover"
+          />
 
           <View style={styles.card}>
             {error ? (
@@ -115,7 +150,7 @@ export default function RegisterScreen() {
               </View>
             ) : null}
 
-            <Text style={styles.miniLabel}>Je suis</Text>
+            <Text style={styles.miniLabel}>Je suis…</Text>
             <View style={styles.roleRow}>
               {ROLES.map((r) => (
                 <Pressable
@@ -126,6 +161,33 @@ export default function RegisterScreen() {
                 </Pressable>
               ))}
             </View>
+
+            {role === 'artisan' ? (
+              <View style={{ marginBottom: 16 }}>
+                <Text style={styles.miniLabel}>Quels services proposez-vous ?</Text>
+                <Text style={styles.sectionHint}>
+                  Choisissez une ou plusieurs catégories. Vous fixerez les prix après validation de votre compte.
+                </Text>
+                <View style={styles.chipsWrap}>
+                  {categories.map((cat) => {
+                    const active = selectedCategories.includes(String(cat.id));
+                    const visual = categoryVisual(cat);
+                    return (
+                      <Pressable
+                        key={String(cat.id)}
+                        onPress={() => toggleCategory(cat.id)}
+                        style={[styles.catChip, active && styles.catChipActive]}>
+                        <Text style={styles.catEmoji}>{visual.emoji}</Text>
+                        <Text style={[styles.catChipTxt, active && styles.catChipTxtActive]} numberOfLines={1}>
+                          {cat.name}
+                        </Text>
+                        {active ? <Ionicons name="checkmark-circle" size={16} color={Colors.light.secondary} /> : null}
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            ) : null}
 
             <Text style={styles.label}>Nom complet</Text>
             <View style={styles.inputWrap}>
@@ -153,7 +215,7 @@ export default function RegisterScreen() {
               />
             </View>
 
-            <Text style={styles.label}>Téléphone (facultatif)</Text>
+            <Text style={styles.label}>Téléphone (recommandé)</Text>
             <View style={styles.inputWrap}>
               <Ionicons name="call-outline" size={18} color={Colors.light.textMuted} style={styles.inputIcon} />
               <TextInput
@@ -246,20 +308,18 @@ const styles = StyleSheet.create({
     width: 260,
     height: 260,
     borderRadius: 160,
-    backgroundColor: 'rgba(45,142,65,0.25)',
+    backgroundColor: 'rgba(201,161,90,0.25)',
   },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
-  logoMark: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+  brandLogo: { width: 140, height: 140, borderRadius: 32, marginBottom: 20, backgroundColor: 'rgba(255,255,255,0.95)' },
+  backHome: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
+    gap: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 20,
+    paddingVertical: 6,
   },
-  brand: { fontSize: 26, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
+  backHomeTxt: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600' },
   h1: {
     fontSize: 28,
     fontWeight: '800',
@@ -271,8 +331,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     color: 'rgba(255,255,255,0.85)',
-    marginBottom: 20,
+    marginBottom: 16,
     maxWidth: 360,
+  },
+  heroImg: {
+    width: '100%',
+    height: 150,
+    borderRadius: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   card: {
     backgroundColor: Colors.light.surface,
@@ -308,9 +376,26 @@ const styles = StyleSheet.create({
     borderColor: Colors.light.border,
     backgroundColor: '#f8fafc',
   },
-  roleChipActive: { borderColor: PRIMARY, backgroundColor: '#E8EEF9' },
+  roleChipActive: { borderColor: PRIMARY, backgroundColor: '#ECEDE3' },
   roleChipTxt: { fontSize: 13, fontWeight: '600', color: Colors.light.textMuted },
   roleChipTxtActive: { color: PRIMARY },
+  sectionHint: { fontSize: 12, color: Colors.light.textMuted, lineHeight: 18, marginBottom: 10 },
+  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  catChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+    backgroundColor: '#f8fafc',
+  },
+  catChipActive: { borderColor: Colors.light.secondary, backgroundColor: '#F2E9D6' },
+  catEmoji: { fontSize: 15 },
+  catChipTxt: { fontSize: 13, fontWeight: '600', color: Colors.light.textMuted, maxWidth: 130 },
+  catChipTxtActive: { color: Colors.light.secondary },
   label: { fontSize: 13, fontWeight: '600', color: Colors.light.text, marginBottom: 8 },
   inputWrap: {
     flexDirection: 'row',
@@ -343,5 +428,5 @@ const styles = StyleSheet.create({
   ctaDisabled: { opacity: 0.6 },
   ctaSecondaryText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   footer: { fontSize: 15, color: 'rgba(255,255,255,0.9)', textAlign: 'center' },
-  footerLink: { color: '#bbf7d0', fontWeight: '800', textDecorationLine: 'underline' },
+  footerLink: { color: '#E7DCC0', fontWeight: '800', textDecorationLine: 'underline' },
 });

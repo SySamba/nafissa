@@ -2,24 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { serviceAPI, categoryAPI } from '../api/services';
-import { Search, MapPin, Star, Filter, Plus, X, Edit, Trash2, User } from 'lucide-react';
+import { Search, MapPin, Filter, Plus, X, Edit, Trash2, User } from 'lucide-react';
+import { categoryVisual } from '../lib/categoryImages';
 
 const ICON_MAP = {
   home: '🏠', baby: '👶', scissors: '✂️', utensils: '🍳',
   'book-open': '📚', sparkles: '✨', wrench: '🔧', zap: '⚡',
 };
-
-function StarRating({ rating }) {
-  return (
-    <span className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <Star key={s} size={12} className={s <= Math.round(rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300'} />
-      ))}
-      <span className="text-xs font-medium text-gray-600 ml-1">{Number(rating).toFixed(1)}</span>
-    </span>
-  );
-}
-
 export default function Services() {
   const { isPrestataire, user } = useAuth();
   const navigate = useNavigate();
@@ -194,7 +183,19 @@ export default function Services() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {services.map((service) => (
             <Link key={service.id} to={`/services/${service.id}`}
-              className="bg-surface rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow group relative">
+              className="bg-surface rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow group relative block">
+              <div className={`relative h-36 overflow-hidden bg-gradient-to-br ${categoryVisual(service.category || {}).gradient}`}>
+                <img
+                  src={categoryVisual(service.category || {}).image}
+                  alt={service.category?.name || 'Service'}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                <span className="absolute bottom-3 left-3 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm bg-black/25 px-2 py-0.5 rounded-md backdrop-blur-[2px]">
+                  {service.category?.name || 'Service'}
+                </span>
+              </div>
               <div className="h-2 bg-gradient-to-r from-primary to-secondary" />
               <div className="p-5">
                 <div className="flex items-start justify-between gap-2 mb-3">

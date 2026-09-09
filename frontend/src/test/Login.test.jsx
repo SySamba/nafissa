@@ -16,30 +16,30 @@ function renderWithRouter(ui) {
 describe('Login', () => {
   it('renders login form', () => {
     renderWithRouter(<Login />);
-    expect(screen.getByText('Connexion')).toBeInTheDocument();
-    expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Connexion' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/email ou téléphone/i)).toBeInTheDocument();
     expect(screen.getByLabelText('Mot de passe')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument();
   });
 
   it('renders register link', () => {
     renderWithRouter(<Login />);
-    expect(screen.getByText("S'inscrire")).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /créer un compte gratuit/i })).toBeInTheDocument();
   });
 
-  it('renders logo', () => {
+  it('renders brand NAFISSA', () => {
     renderWithRouter(<Login />);
-    const logos = screen.getAllByAltText('Nafissa');
-    expect(logos.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole('link', { name: /NAFISSA/i }).length).toBeGreaterThanOrEqual(1);
   });
 
-  it('email input has correct type', () => {
+  it('identifier input accepts email', () => {
     renderWithRouter(<Login />);
-    const emailInput = screen.getByLabelText('Email');
-    expect(emailInput).toHaveAttribute('type', 'email');
+    const identifierInput = screen.getByLabelText(/email ou téléphone/i);
+    expect(identifierInput).toHaveAttribute('required');
+    expect(identifierInput.getAttribute('type')).not.toBe('password');
   });
 
-  it('password input has correct type', () => {
+  it('password input has password type initially', () => {
     renderWithRouter(<Login />);
     const passwordInput = screen.getByLabelText('Mot de passe');
     expect(passwordInput).toHaveAttribute('type', 'password');

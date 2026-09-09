@@ -1,8 +1,7 @@
-import { ThemeProvider, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
 import * as SplashScreen from 'expo-splash-screen';
 import { Stack } from 'expo-router';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
 import 'react-native-reanimated';
 
 import { AuthProvider } from '@/context/AuthContext';
@@ -25,34 +24,22 @@ const navLight = {
   },
 };
 
-const navDark = {
-  ...DarkTheme,
-  colors: {
-    ...DarkTheme.colors,
-    primary: Colors.dark.primary,
-    background: Colors.dark.background,
-    card: Colors.dark.surface,
-    text: Colors.dark.text,
-    border: Colors.dark.border,
-    notification: Colors.dark.secondary,
-  },
-};
-
 export default function RootLayout() {
-  const scheme = useColorScheme();
-
   useEffect(() => {
     SplashScreen.hideAsync().catch(() => {});
   }, []);
 
+  // L'app est conçue en thème clair : on force le mode clair pour garantir une
+  // lisibilité parfaite (sinon, en mode sombre du téléphone, le fond devient
+  // foncé alors que les contenus restent clairs → texte illisible).
   return (
     <AuthProvider>
-      <ThemeProvider value={scheme === 'dark' ? navDark : navLight}>
+      <ThemeProvider value={navLight}>
         <Stack
           screenOptions={{
             headerShown: false,
             animation: 'slide_from_right',
-            contentStyle: { backgroundColor: scheme === 'dark' ? Colors.dark.background : Colors.light.background },
+            contentStyle: { backgroundColor: Colors.light.background },
           }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="register" />
@@ -62,6 +49,66 @@ export default function RootLayout() {
             options={{
               headerShown: true,
               title: 'Réservation',
+              headerBackTitle: 'Retour',
+              headerTintColor: Colors.light.primary,
+              headerStyle: { backgroundColor: Colors.light.surface },
+              headerShadowVisible: false,
+              headerTitleStyle: { fontWeight: '700', fontSize: 18 },
+            }}
+          />
+          <Stack.Screen
+            name="service/[id]"
+            options={{
+              headerShown: true,
+              title: 'Service',
+              headerBackTitle: 'Retour',
+              headerTintColor: Colors.light.primary,
+              headerStyle: { backgroundColor: Colors.light.surface },
+              headerShadowVisible: false,
+              headerTitleStyle: { fontWeight: '700', fontSize: 18 },
+            }}
+          />
+          <Stack.Screen
+            name="service/create"
+            options={{
+              headerShown: true,
+              title: 'Nouveau service',
+              headerBackTitle: 'Retour',
+              headerTintColor: Colors.light.primary,
+              headerStyle: { backgroundColor: Colors.light.surface },
+              headerShadowVisible: false,
+              headerTitleStyle: { fontWeight: '700', fontSize: 18 },
+            }}
+          />
+          <Stack.Screen
+            name="service/edit/[id]"
+            options={{
+              headerShown: true,
+              title: 'Modifier',
+              headerBackTitle: 'Retour',
+              headerTintColor: Colors.light.primary,
+              headerStyle: { backgroundColor: Colors.light.surface },
+              headerShadowVisible: false,
+              headerTitleStyle: { fontWeight: '700', fontSize: 18 },
+            }}
+          />
+          <Stack.Screen
+            name="notifications"
+            options={{
+              headerShown: true,
+              title: 'Notifications',
+              headerBackTitle: 'Retour',
+              headerTintColor: Colors.light.primary,
+              headerStyle: { backgroundColor: Colors.light.surface },
+              headerShadowVisible: false,
+              headerTitleStyle: { fontWeight: '700', fontSize: 18 },
+            }}
+          />
+          <Stack.Screen
+            name="profile/edit"
+            options={{
+              headerShown: true,
+              title: 'Modifier le profil',
               headerBackTitle: 'Retour',
               headerTintColor: Colors.light.primary,
               headerStyle: { backgroundColor: Colors.light.surface },

@@ -1,3 +1,4 @@
+
 # 📖 Guide complet NAFISSATOU — Installation, Utilisation et Fonctionnement
 
 ---
@@ -11,7 +12,7 @@
 5. [Comptes de test (après import SQL)](#5--comptes-de-test-après-import-sql)
 6. [Architecture du projet](#6--architecture-du-projet)
 7. [Workflow de réservation (le cœur du système)](#7--workflow-de-réservation)
-8. [Guide par rôle (comment utiliser l'application)](#8--guide-par-rôle)
+8. [Guide par rôle (comment utiliser l&#39;application)](#8--guide-par-rôle)
 9. [Structure des fichiers importants](#9--structure-des-fichiers-importants)
 10. [Commandes utiles pour le développeur](#10--commandes-utiles)
 11. [Modifier le code — par où commencer ?](#11--modifier-le-code)
@@ -24,11 +25,11 @@
 
 Avant de commencer, vous devez avoir installé sur votre machine :
 
-| Logiciel | Version minimum | Vérifier avec |
-|----------|----------------|---------------|
-| **Node.js** | 20 LTS recommandé (18+ possible) | `node -v` |
-| **npm** | 9+ | `npm -v` |
-| **PostgreSQL** | 14+ recommandé | `psql --version` |
+| Logiciel             | Version minimum                   | Vérifier avec     |
+| -------------------- | --------------------------------- | ------------------ |
+| **Node.js**    | 20 LTS recommandé (18+ possible) | `node -v`        |
+| **npm**        | 9+                                | `npm -v`         |
+| **PostgreSQL** | 14+ recommandé                   | `psql --version` |
 
 Un éditeur de texte (VS Code / Cursor) et Git pour cloner ou pousser vers GitHub sont utiles.
 
@@ -132,16 +133,16 @@ Ouvrez **http://localhost:5173** dans le navigateur.
 
 Après `node scripts/import-nafissa.mjs` (ou équivalent) avec le fichier `nafissa.sql`, les comptes ci-dessous sont en principe disponibles (comme avec l’ancien seed Laravel) :
 
-| Rôle | Email | Mot de passe | Nom |
-|------|-------|-------------|-----|
-| **Admin** | `admin@nafissa.com` | `password` | Admin NAFISSATOU |
-| **Maman (cliente)** | `fatima@nafissa.com` | `password` | Fatima Ba |
-| **Maman (cliente)** | `aminata@nafissa.com` | `password` | Aminata Ndiaye |
-| **Étudiant (prestataire)** | `oumar@nafissa.com` | `password` | Oumar Sy |
-| **Étudiant (prestataire)** | `ibrahima@nafissa.com` | `password` | Ibrahima Diop |
-| **Artisan (prestataire)** | `aissata@nafissa.com` | `password` | Aissata Diallo |
-| **Artisan (prestataire)** | `mariama@nafissa.com` | `password` | Mariama Sow |
-| **En attente (non validé)** | `moussa@nafissa.com` | `password` | Moussa Fall |
+| Rôle                              | Email                    | Mot de passe | Nom              |
+| ---------------------------------- | ------------------------ | ------------ | ---------------- |
+| **Admin**                    | `admin@nafissa.com`    | `password` | Admin NAFISSATOU |
+| **Maman (cliente)**          | `fatima@nafissa.com`   | `password` | Fatima Ba        |
+| **Maman (cliente)**          | `aminata@nafissa.com`  | `password` | Aminata Ndiaye   |
+| **Étudiant (prestataire)**  | `oumar@nafissa.com`    | `password` | Oumar Sy         |
+| **Étudiant (prestataire)**  | `ibrahima@nafissa.com` | `password` | Ibrahima Diop    |
+| **Artisan (prestataire)**    | `aissata@nafissa.com`  | `password` | Aissata Diallo   |
+| **Artisan (prestataire)**    | `mariama@nafissa.com`  | `password` | Mariama Sow      |
+| **En attente (non validé)** | `moussa@nafissa.com`   | `password` | Moussa Fall      |
 
 > **Monnaie** : Tous les prix sont en **FCFA** (Franc CFA).
 > **Localisation** : Quartiers de **Dakar**, Sénégal.
@@ -237,16 +238,16 @@ Le cœur du système NAFISSATOU est le **workflow de réservation en 6 étapes**
 
 ### Les 8 statuts possibles :
 
-| Statut | Signification | Qui agit ensuite ? |
-|--------|--------------|-------------------|
-| `en_attente_admin` | Demande envoyée, en attente d'attribution | **Admin** |
-| `en_attente_prestataire` | Prestataire attribué, en attente de réponse | **Prestataire** |
-| `acceptee` | Prestataire a accepté, en attente de paiement | **Cliente** |
-| `refusee` | Prestataire a refusé | **Admin** (cherche un autre) |
-| `payee` | Paiement effectué, en attente du début du service | **Prestataire** |
-| `en_cours` | Service en cours d'exécution | **Prestataire** |
-| `terminee` | Service terminé, en attente de confirmation | **Cliente** |
-| `annulee` | Demande annulée par la cliente | Personne |
+| Statut                     | Signification                                       | Qui agit ensuite ?                 |
+| -------------------------- | --------------------------------------------------- | ---------------------------------- |
+| `en_attente_admin`       | Demande envoyée, en attente d'attribution          | **Admin**                    |
+| `en_attente_prestataire` | Prestataire attribué, en attente de réponse       | **Prestataire**              |
+| `acceptee`               | Prestataire a accepté, en attente de paiement      | **Cliente**                  |
+| `refusee`                | Prestataire a refusé                               | **Admin** (cherche un autre) |
+| `payee`                  | Paiement effectué, en attente du début du service | **Prestataire**              |
+| `en_cours`               | Service en cours d'exécution                       | **Prestataire**              |
+| `terminee`               | Service terminé, en attente de confirmation        | **Cliente**                  |
+| `annulee`                | Demande annulée par la cliente                     | Personne                           |
 
 ---
 
@@ -270,9 +271,9 @@ Le cœur du système NAFISSATOU est le **workflow de réservation en 6 étapes**
 2. **Page Services** : Le prestataire ne voit que **ses propres services** (pas ceux des autres)
 3. **Ajouter des services** : Bouton "Nouveau service" → Catégorie, titre, description, prix (FCFA), localisation
 4. **Modifier/Supprimer un service** : Boutons Modifier/Supprimer sur chacun de ses services
-4. **Recevoir des demandes** : Quand l'admin attribue une demande → Notification → Accepter ou Refuser
-5. **Effectuer le service** : Après le paiement → "Démarrer le service" → faire le travail → "Marquer comme terminée"
-6. **Recevoir le paiement** : Après confirmation de la cliente, le paiement est libéré (moins 10% commission)
+5. **Recevoir des demandes** : Quand l'admin attribue une demande → Notification → Accepter ou Refuser
+6. **Effectuer le service** : Après le paiement → "Démarrer le service" → faire le travail → "Marquer comme terminée"
+7. **Recevoir le paiement** : Après confirmation de la cliente, le paiement est libéré (moins 10% commission)
 
 ### 🛡️ Rôle : Administrateur
 
@@ -288,25 +289,25 @@ Le cœur du système NAFISSATOU est le **workflow de réservation en 6 étapes**
 
 ### Backend — Où modifier quoi ?
 
-| Je veux... | Emplacement principal |
-|-----------|----------------------|
-| Schéma / tables | `backend-node/prisma/schema.prisma` + `prisma migrate dev` |
-| Routes HTTP | `backend-node/src/routes/*.js` |
-| Middleware (auth, admin) | `backend-node/src/middleware/` |
-| Logique commune (pagination JSON, sanitisation) | `backend-node/src/lib/` |
-| Point d’entrée serveur | `backend-node/src/server.js`, `index.js` |
-| Import données depuis `nafissa.sql` | `backend-node/scripts/import-nafissa.mjs` |
+| Je veux...                                      | Emplacement principal                                          |
+| ----------------------------------------------- | -------------------------------------------------------------- |
+| Schéma / tables                                | `backend-node/prisma/schema.prisma` + `prisma migrate dev` |
+| Routes HTTP                                     | `backend-node/src/routes/*.js`                               |
+| Middleware (auth, admin)                        | `backend-node/src/middleware/`                               |
+| Logique commune (pagination JSON, sanitisation) | `backend-node/src/lib/`                                      |
+| Point d’entrée serveur                        | `backend-node/src/server.js`, `index.js`                   |
+| Import données depuis`nafissa.sql`           | `backend-node/scripts/import-nafissa.mjs`                    |
 
 ### Frontend — Où modifier quoi ?
 
-| Je veux... | Fichier à modifier |
-|-----------|-------------------|
-| Modifier les appels API | `src/api/services.js` |
-| Modifier l'authentification | `src/contexts/AuthContext.jsx` |
-| Modifier le menu / la navigation | `src/components/Layout.jsx` |
-| Modifier les routes (pages) | `src/App.jsx` |
-| Modifier une page spécifique | `src/pages/[NomDeLaPage].jsx` |
-| Modifier les styles globaux | `src/index.css` (Tailwind CSS) |
+| Je veux...                       | Fichier à modifier              |
+| -------------------------------- | -------------------------------- |
+| Modifier les appels API          | `src/api/services.js`          |
+| Modifier l'authentification      | `src/contexts/AuthContext.jsx` |
+| Modifier le menu / la navigation | `src/components/Layout.jsx`    |
+| Modifier les routes (pages)      | `src/App.jsx`                  |
+| Modifier une page spécifique    | `src/pages/[NomDeLaPage].jsx`  |
+| Modifier les styles globaux      | `src/index.css` (Tailwind CSS) |
 
 ---
 
@@ -376,21 +377,27 @@ Créer `frontend/src/pages/MaPage.jsx`, déclarer la route dans `App.jsx`, puis 
 ## 12 — FAQ et dépannage
 
 ### ❌ `P1001: Can't reach database server`
+
 PostgreSQL n’est pas démarré, ou **`DATABASE_URL`** dans `backend-node/.env` est incorrect (hôte, port, utilisateur, mot de passe).
 
 ### ❌ Tables absentes ou erreurs Prisma sur les modèles
+
 Exécutez `npx prisma migrate deploy` (ou `npx prisma db push` en développement expéditif).
 
 ### ❌ Échec de `scripts/import-nafissa.mjs`
+
 Vérifiez la présence de `nafissa.sql` à la racine du dépôt, que la base existe, et les droits sur PostgreSQL.
 
 ### ❌ Erreurs réseau côté navigateur (`/api/...`)
+
 L’API doit tourner (`npm run dev` dans `backend-node`), port **3001** par défaut. Contrôlez aussi le proxy dans `frontend/vite.config.js`.
 
 ### ❌ « npm ERR! code ENOENT »
+
 Vérifiez d’être dans `frontend/` ou `backend-node/` avant `npm …`.
 
 ### ❌ Changer le port du frontend
+
 Modifiez `server.port` dans `frontend/vite.config.js`.
 
 ---
@@ -405,14 +412,14 @@ Le dépôt contient `.github/workflows/ci.yml`. À chaque **push** ou **pull req
 
 Secrets (**Settings → Secrets and variables → Actions**) :
 
-| Secret | Rôle |
-|--------|------|
-| **`SONAR_TOKEN`** | Jeton SonarQube ou SonarCloud (*Mon compte* → *Sécurité*). |
+| Secret                       | Rôle                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`SONAR_TOKEN`**    | Jeton SonarQube ou SonarCloud (*Mon compte* → *Sécurité*).                                                                                                                                                                                                                                                                                                                                                       |
 | **`SONAR_HOST_URL`** | **SonarQube Server uniquement**, avec une URL **joignable depuis Internet**. Ne pas utiliser **`http://localhost:9000`** pour les runners GitHub : pour eux, `localhost` est leur machine, pas votre PC. Pour **SonarCloud**, retirez ce secret et ajoutez `sonar.organization` + `sonar.host.url` dans **`sonar-project.properties`** (voir **`GUIDE_SONARQUBE.md`**). |
 
 Pour Sonar **local** (`localhost`), lancez **`sonar-scanner`** sur votre ordinateur après les tests avec couverture.
 
-Référence technique : **`GUIDE_SONARQUBE.md`**.  
+Référence technique : **`GUIDE_SONARQUBE.md`**.
 Support pédagogique : **`PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.md`**.
 
 **Pousser vers votre dépôt privé** [`https://github.com/SySamba/nafissa.git`](https://github.com/SySamba/nafissa.git) :

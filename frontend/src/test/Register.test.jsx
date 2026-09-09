@@ -23,11 +23,11 @@ describe('Register', () => {
     expect(screen.getByLabelText('Mot de passe')).toBeInTheDocument();
   });
 
-  it('renders role selection with three options', () => {
+  it('renders role selection with cliente and artisan only', () => {
     renderWithRouter(<Register />);
-    expect(screen.getByText('Maman (Cliente)')).toBeInTheDocument();
-    expect(screen.getByText('Étudiant(e)')).toBeInTheDocument();
-    expect(screen.getByText('Artisan(e)')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('maman')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('artisan')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('etudiant')).not.toBeInTheDocument();
   });
 
   it('renders login link', () => {

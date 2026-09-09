@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
+import { stripUser } from '../lib/serializers.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
 
@@ -7,6 +8,15 @@ const includeList = {
   provider: { include: { profile: true } },
   category: true,
 };
+
+function uniqProvidersByUser(rows) {
+  const m = new Map();
+  for (const row of rows) {
+    const k = row.providerId.toString();
+    if (!m.has(k)) m.set(k, row);
+  }
+  return [...m.values()];
+}
 
 export default async function serviceRoutes(fastify) {
   fastify.get('/services', async (request) => {
@@ -52,6 +62,48 @@ export default async function serviceRoutes(fastify) {
     ]);
 
     return laravelPaginated(rows, total, page, perPage, fullResourcePath(request));
+  });
+
+  /** Prestataires vérifiés avec au moins une offre disponible dans la même catégorie (parcours client). */
+  fastify.get('/services/:id/category-providers', async (request, reply) => {
+    let id;
+    try {
+      id = BigInt(request.params.id);
+    } catch {
+      return reply.code(400).send({ message: 'ID invalide.' });
+    }
+
+    const base = await prisma.service.findUnique({
+      where: { id },
+      select: { categoryId: true },
+    });
+    if (!base) return reply.code(404).send({ message: 'Service introuvable.' });
+
+    const rows = await prisma.service.findMany({
+      where: {
+        categoryId: base.categoryId,
+        available: true,
+        provider: {
+          verified: true,
+          role: { in: ['etudiant', 'artisan'] },
+          profile: { status: 'active' },
+        },
+      },
+      include: { provider: { include: { profile: true } }, category: true },
+      orderBy: [{ price: 'asc' }, { createdAt: 'desc' }],
+    });
+
+    const unique = uniqProvidersByUser(rows);
+    const providers = unique.map((s) => ({
+      service_id: s.id,
+      title: s.title,
+      price: s.price,
+      location: s.location,
+      category: s.category,
+      provider: stripUser(s.provider),
+    }));
+
+    return { providers };
   });
 
   fastify.get('/services/:id', async (request, reply) => {

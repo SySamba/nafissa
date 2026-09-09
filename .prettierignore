@@ -1,0 +1,15 @@
+node_modules
+dist
+build
+coverage
+.expo
+package-lock.json
+prisma/migrations
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.svg
+*.sql
+*.docx
+*.drawio

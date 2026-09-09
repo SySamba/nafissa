@@ -29,12 +29,13 @@ type RegisterPayload = {
   phone?: string;
   address?: string;
   role: 'maman' | 'etudiant' | 'artisan';
+  category_ids?: (string | number)[];
 };
 
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
-  login: (credentials: { email: string; password: string }) => Promise<unknown>;
+  login: (credentials: { login: string; password: string }) => Promise<unknown>;
   register: (payload: RegisterPayload) => Promise<unknown>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
@@ -70,8 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loadUser();
   }, [loadUser]);
 
-  const login = useCallback(async (credentials: { email: string; password: string }) => {
-    const { data } = await api.post<{ token: string; user: User }>('/auth/login', credentials);
+  const login = useCallback(async (credentials: { login: string; password: string }) => {
+    const { data } = await api.post<{ token: string; user: User }>('/auth/login', {
+      login: credentials.login.trim(),
+      password: credentials.password,
+    });
     await AsyncStorage.setItem('nafissa_token', data.token);
     await AsyncStorage.setItem('nafissa_user', JSON.stringify(data.user));
     setUser(data.user);

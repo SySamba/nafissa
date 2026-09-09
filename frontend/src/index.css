@@ -3,17 +3,18 @@
 @theme {
   --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
-  --color-primary: #1B5FAD;
-  --color-primary-light: #2A7FD4;
-  --color-primary-dark: #134A8A;
-  --color-secondary: #2D8E41;
-  --color-secondary-light: #3AAF52;
-  --color-secondary-dark: #1F6A2F;
-  --color-accent: #F59E0B;
-  --color-bg: #F8FAFC;
+  /* NAFISSA — Identité visuelle */
+  --color-primary: #44512F;        /* Vert olive profond */
+  --color-primary-light: #5E6E42;
+  --color-primary-dark: #333D24;
+  --color-secondary: #C9A15A;      /* Doré sable */
+  --color-secondary-light: #D8B87B;
+  --color-secondary-dark: #A8843F;
+  --color-accent: #C9A15A;
+  --color-bg: #F7F5F2;             /* Blanc cassé */
   --color-surface: #FFFFFF;
-  --color-muted: #64748B;
-  --color-danger: #EF4444;
+  --color-muted: #6B6456;
+  --color-danger: #DC4C3F;
 }
 
 @layer base {

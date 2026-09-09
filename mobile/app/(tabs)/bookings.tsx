@@ -31,7 +31,7 @@ const STATUS: Record<string, { label: string; bg: string; fg: string }> = {
   acceptee: { label: 'Acceptée', bg: '#DBEAFE', fg: '#1E40AF' },
   refusee: { label: 'Refusée', bg: '#FEE2E2', fg: '#B91C1C' },
   payee: { label: 'Payée', bg: '#F3E8FF', fg: '#6B21A8' },
-  en_cours: { label: 'En cours', bg: '#E8EEF9', fg: Colors.light.primary },
+  en_cours: { label: 'En cours', bg: '#ECEDE3', fg: Colors.light.primary },
   terminee: { label: 'Terminée', bg: '#DCFCE7', fg: Colors.light.secondary },
   annulee: { label: 'Annulée', bg: '#FEE2E2', fg: '#B91C1C' },
 };

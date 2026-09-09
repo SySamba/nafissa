@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { notificationAPI } from '../api/services';
 import { Bell, CheckCheck, Calendar, CreditCard, Shield, User, BookOpen, ExternalLink } from 'lucide-react';
@@ -28,7 +28,7 @@ export default function Notifications() {
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
 
-  const fetchNotifications = () => {
+  const fetchNotifications = useCallback(() => {
     setLoading(true);
     notificationAPI.list({ page })
       .then(({ data }) => {
@@ -37,9 +37,9 @@ export default function Notifications() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  };
+  }, [page]);
 
-  useEffect(() => { fetchNotifications(); }, [page]);
+  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
   const handleMarkRead = async (id) => {
     await notificationAPI.markRead(id);
