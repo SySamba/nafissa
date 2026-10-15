@@ -35,11 +35,11 @@ const WORKFLOW_STEPS = [
   { num: '5', title: 'Validation & attribution', desc: 'Une personne dédiée valide et attribue le prestataire — comme sur votre parcours historique Laravel.', icon: Shield },
 ];
 
-function renderServiceCard({ icon: Icon, name, desc, slug }, user) {
+function renderServiceCard({ icon: Icon, name, desc, slug }) {
   const { image, gradient, emoji } = homepageCategoryVisual(slug);
   return (
     <Link
-      to={user ? '/services' : '/register'}
+      to="/services"
       key={name}
       className="group flex flex-col overflow-hidden rounded-[1.4rem] border border-gray-200/90 bg-white shadow-md ring-1 ring-black/[0.04] hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
       <div className={`relative h-36 w-full shrink-0 overflow-hidden bg-gradient-to-br ${gradient} sm:h-44`}>
@@ -141,7 +141,7 @@ export default function Home() {
 
               {/* CTA Buttons */}
               <div className="mt-9 flex flex-col sm:flex-row items-center lg:items-start lg:justify-start justify-center gap-4">
-                <Link to="/register" className="w-full sm:w-auto group inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white px-8 py-4 rounded-2xl text-base font-bold transition-all shadow-2xl shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-0.5 active:translate-y-0">
+                <Link to="/services" className="w-full sm:w-auto group inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white px-8 py-4 rounded-2xl text-base font-bold transition-all shadow-2xl shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-0.5 active:translate-y-0">
                   Trouver un prestataire <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link to="/register" className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-secondary/10 hover:bg-secondary/15 text-secondary px-8 py-4 rounded-2xl text-base font-bold transition-all border border-secondary/20 hover:border-secondary/40">
@@ -233,7 +233,7 @@ export default function Home() {
             <span className="h-px flex-1 bg-gradient-to-r from-primary/20 to-transparent" />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
-            {PRIORITY_SERVICES.map((svc) => renderServiceCard(svc, user))}
+            {PRIORITY_SERVICES.map((svc) => renderServiceCard(svc))}
           </div>
 
           {/* Services secondaires */}
@@ -244,7 +244,7 @@ export default function Home() {
             <span className="h-px flex-1 bg-gradient-to-r from-secondary/30 to-transparent" />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {SECONDARY_SERVICES.map((svc) => renderServiceCard(svc, user))}
+            {SECONDARY_SERVICES.map((svc) => renderServiceCard(svc))}
           </div>
         </div>
       </section>

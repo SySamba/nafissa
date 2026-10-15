@@ -28,6 +28,10 @@ Thumbs.db
 # Prisma (généré localement)
 backend-node/node_modules/.prisma/
 
+# Ancien backend Laravel (code mort) + storage contenant des fichiers
+# privés uploadés (pièces d'identité, photos) — ne jamais versionner.
+backend/
+
 # Outils
 *.swp
 *.swo

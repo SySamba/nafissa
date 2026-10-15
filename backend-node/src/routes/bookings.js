@@ -1,9 +1,13 @@
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { prisma } from '../lib/prisma.js';
 import { BS } from '../lib/constants.js';
 import { notify, notifyAdmins, bookingDetailPath } from '../lib/notifications.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
+import { sendWhatsApp, clientStatusText, trackingLink } from '../lib/whatsapp-send.js';
+import { geocodeAddress } from '../lib/geocode.js';
 
 const bookingInclude = {
   service: { include: { category: true } },
@@ -52,20 +56,78 @@ function canTransition(user, booking, newStatus) {
   return false;
 }
 
+/**
+ * Variantes normalisées d'un numéro saisi par un invité
+ * (local 9 chiffres, indicatif 221, formats avec/sans espaces).
+ */
+function guestPhoneVariants(phone) {
+  const raw = String(phone || '').trim();
+  const digits = raw.replace(/\D/g, '');
+  const variants = new Set([raw, digits].filter(Boolean));
+  if (digits.length === 9) variants.add(`+221${digits}`);
+  if (digits.startsWith('221')) variants.add(`+${digits}`);
+  return [...variants];
+}
+
+/**
+ * Rattache la demande à un compte cliente existant (même numéro)
+ * ou crée un compte invité minimal que l'équipe pourra recontacter.
+ */
+async function findOrCreateGuestClient(name, phone, location) {
+  const variants = guestPhoneVariants(phone);
+  const existing = await prisma.user.findFirst({
+    where: { role: 'maman', OR: variants.map((p) => ({ phone: p })) },
+  });
+  if (existing) return { client: existing, isGuest: false };
+
+  const client = await prisma.user.create({
+    data: {
+      name,
+      email: `invite-${Date.now()}-${randomBytes(4).toString('hex')}@nafissa.local`,
+      phone: String(phone).trim(),
+      address: location || null,
+      password: await bcrypt.hash(randomBytes(16).toString('hex'), 12),
+      role: 'maman',
+      verified: true,
+      profile: { create: { status: 'active' } },
+    },
+  });
+  return { client, isGuest: true };
+}
+
 export default async function bookingRoutes(fastify) {
-  fastify.post('/bookings', { preHandler: authMiddleware }, async (request, reply) => {
+  // Demande rapide : ouverte aux invités (nom + téléphone) comme aux clientes connectées.
+  fastify.post('/bookings', { preHandler: optionalAuthMiddleware }, async (request, reply) => {
     const schema = z.object({
       service_id: z.coerce.bigint(),
-      booking_date: z.string(),
+      booking_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       booking_time: z.string().regex(/^\d{2}:\d{2}$/),
       notes: z.string().max(1000).optional().nullable(),
       location: z.string().max(255).optional().nullable(),
       description: z.string().max(2000).optional().nullable(),
+      guest_name: z.string().max(100).optional().nullable(),
+      guest_phone: z.string().max(30).optional().nullable(),
     });
     const parsed = schema.safeParse(request.body || {});
     if (!parsed.success) return reply.code(422).send({ message: 'Données invalides.' });
     const v = parsed.data;
-    const user = request.user;
+
+    let client = request.user;
+    let isGuest = false;
+    if (!client) {
+      const name = (v.guest_name || '').trim();
+      const phone = (v.guest_phone || '').trim();
+      if (name.length < 2) {
+        return reply.code(422).send({ message: 'Indiquez votre nom complet.' });
+      }
+      if (phone.replace(/\D/g, '').length < 8) {
+        return reply.code(422).send({ message: 'Indiquez un numéro de téléphone valide.' });
+      }
+      const found = await findOrCreateGuestClient(name, phone, v.location);
+      client = found.client;
+      isGuest = found.isGuest;
+    }
+
     const service = await prisma.service.findUnique({ where: { id: v.service_id } });
     if (!service) return reply.code(422).send({ message: "Ce service n'existe pas." });
     if (!service.available) return reply.code(422).send({ message: "Ce service n'est pas disponible." });
@@ -77,33 +139,49 @@ export default async function bookingRoutes(fastify) {
       return reply.code(422).send({ message: "La date doit être aujourd'hui ou ultérieure." });
     }
 
+    // Géocodage du lieu d'intervention : quartier local ou OpenStreetMap.
+    const coords = await geocodeAddress(v.location ?? client.address);
+
     const booking = await prisma.booking.create({
       data: {
-        clientId: user.id,
+        clientId: client.id,
         providerId: null,
         serviceId: service.id,
+        trackingToken: randomBytes(16).toString('hex'),
+        lat: coords?.lat ?? null,
+        lng: coords?.lng ?? null,
         status: BS.EN_ATTENTE_ADMIN,
         bookingDate: bd,
         bookingTime: parseBookingTime(v.booking_time),
         totalPrice: service.price,
         notes: v.notes ?? null,
-        location: v.location ?? user.address,
+        location: v.location ?? client.address,
         description: v.description ?? null,
       },
       include: bookingInclude,
     });
 
+    const contact = client.phone ? ` (tél : ${client.phone})` : '';
     await notifyAdmins(
       'booking',
-      'Nouvelle demande de service',
-      `${user.name} a fait une demande pour « ${booking.service.title} ».`,
+      isGuest ? 'Demande rapide (sans compte)' : 'Nouvelle demande de service',
+      `${client.name}${contact} a fait une demande pour « ${booking.service.title} ».`,
       bookingDetailPath(booking.id),
     );
 
+    // Suivi automatique par WhatsApp (si l'API Meta est configurée).
+    await sendWhatsApp(
+      client.phone,
+      `Bonjour ${client.name},\n\nVotre demande NAFISSA n°${booking.id} — « ${booking.service.title} » a bien été reçue. Notre équipe sélectionne le meilleur prestataire disponible près de chez vous.\n\nSuivez-la en temps réel : ${trackingLink(booking.trackingToken)}\n\n— L'équipe NAFISSA`,
+      request.log,
+    );
+
     return reply.code(201).send({
-      message:
-        "Demande envoyée avec succès. L'administrateur va attribuer un prestataire.",
+      message: isGuest
+        ? 'Demande envoyée ! Notre équipe vous recontactera par téléphone pour la suite.'
+        : "Demande envoyée avec succès. L'administrateur va attribuer un prestataire.",
       booking,
+      tracking_token: booking.trackingToken,
     });
   });
 
@@ -167,16 +245,32 @@ export default async function bookingRoutes(fastify) {
     }
 
     if (newStatus === BS.REFUSEE) {
+      // On mémorise qui a refusé : la demande repasse en attente admin mais
+      // ce prestataire sera signalé dans les prochaines suggestions.
+      const prevRefusals = Array.isArray(booking.refusedBy) ? booking.refusedBy.map(String) : [];
+      const refusedBy = [...new Set([...prevRefusals, String(booking.providerId)])];
       const updated = await prisma.booking.update({
         where: { id },
-        data: { status: BS.EN_ATTENTE_ADMIN, providerId: null },
+        data: { status: BS.EN_ATTENTE_ADMIN, providerId: null, refusedBy },
         include: bookingInclude,
       });
+      const link = bookingDetailPath(updated.id);
       await notifyAdmins(
         'booking',
         'Prestataire a refusé la mission',
         `Le prestataire a refusé la mission pour « ${updated.service.title} ». Veuillez attribuer un autre prestataire.`,
-        bookingDetailPath(updated.id),
+        link,
+      );
+      await notify(
+        updated.clientId,
+        'booking',
+        'Nous cherchons un autre prestataire',
+        `Le prestataire choisi pour « ${updated.service.title} » n'est pas disponible. Notre équipe vous attribue un autre prestataire.`,
+        link,
+      );
+      await sendWhatsApp(
+        updated.client?.phone,
+        `Bonjour${updated.client?.name ? ` ${updated.client.name}` : ''},\n\nLe prestataire choisi pour votre demande NAFISSA n°${updated.id} — « ${updated.service.title} » n'est pas disponible. Notre équipe vous attribue un autre prestataire.\n\nSuivi : ${trackingLink(updated.trackingToken)}\n\n— L'équipe NAFISSA`,
       );
       return {
         message: `Mission refusée. L'administrateur va attribuer un autre prestataire.`,
@@ -343,4 +437,7 @@ async function sendStatusNotifications(booking, newStatus) {
   } else if (m.targetId) {
     await notify(m.targetId, 'booking', m.title, m.message, path);
   }
+
+  // Suivi automatique par WhatsApp vers la cliente à chaque changement de statut.
+  await sendWhatsApp(booking.client?.phone, clientStatusText(booking));
 }

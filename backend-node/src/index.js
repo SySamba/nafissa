@@ -2,8 +2,9 @@ import { buildApp } from './server.js';
 
 const host = process.env.HOST || '0.0.0.0';
 const preferredPort = Number(process.env.PORT) || 3001;
-/** Si 3001 est pris (ancienne instance Node, autre app), essaye jusqu’à +9. */
-const MAX_TRIES = 10;
+/** En dev : si le port est pris, essaie jusqu’à +9. En production, le port est
+ *  imposé par l’hébergeur (proxy inverse) — pas de port de substitution. */
+const MAX_TRIES = process.env.NODE_ENV === 'production' ? 1 : 10;
 
 const app = await buildApp();
 

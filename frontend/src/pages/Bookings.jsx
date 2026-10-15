@@ -3,18 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { bookingAPI } from '../api/services';
 import usePolling from '../hooks/usePolling';
-import { Calendar, Clock, CheckCircle, XCircle, ArrowRight, CreditCard } from 'lucide-react';
-
-const STATUS_CONFIG = {
-  en_attente_admin: { label: 'En attente admin', color: 'bg-amber-100 text-amber-700', icon: Clock },
-  en_attente_prestataire: { label: 'En attente prestataire', color: 'bg-orange-100 text-orange-700', icon: Clock },
-  acceptee: { label: 'Acceptée', color: 'bg-blue-100 text-blue-700', icon: CheckCircle },
-  refusee: { label: 'Refusée', color: 'bg-red-100 text-red-700', icon: XCircle },
-  payee: { label: 'Payée', color: 'bg-purple-100 text-purple-700', icon: CreditCard },
-  en_cours: { label: 'En cours', color: 'bg-primary/10 text-primary', icon: Clock },
-  terminee: { label: 'Terminée', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  annulee: { label: 'Annulée', color: 'bg-red-100 text-red-700', icon: XCircle },
-};
+import { Calendar, ArrowRight, Clock } from 'lucide-react';
+import { statusConfig, statusOptions } from '../lib/bookingStatus';
 
 export default function Bookings() {
   const { isMaman } = useAuth();
@@ -55,7 +45,7 @@ export default function Bookings() {
 
       {/* Status filters */}
       <div className="flex gap-2 overflow-x-auto pb-2">
-        {[{ value: '', label: 'Toutes' }, ...Object.entries(STATUS_CONFIG).map(([k, v]) => ({ value: k, label: v.label }))].map(({ value, label }) => (
+        {[{ value: '', label: 'Toutes' }, ...statusOptions()].map(({ value, label }) => (
           <button key={value} onClick={() => setStatusFilter(value)}
             className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${statusFilter === value ? 'bg-primary text-white' : 'bg-surface border border-gray-200 text-muted hover:border-primary hover:text-primary'}`}>
             {label}
@@ -83,7 +73,7 @@ export default function Bookings() {
       ) : (
         <div className="space-y-3">
           {filteredBookings.map((booking) => {
-            const cfg = STATUS_CONFIG[booking.status] || STATUS_CONFIG.en_attente_admin;
+            const cfg = statusConfig(booking.status);
             const StatusIcon = cfg.icon;
             return (
               <Link key={booking.id} to={`/bookings/${booking.id}`}

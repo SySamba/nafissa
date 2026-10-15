@@ -1,17 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { adminAPI } from '../api/services';
 import usePolling from '../hooks/usePolling';
+import ProviderDossierModal from '../components/ProviderDossierModal';
+import { whatsappTrackingLink } from '../lib/whatsapp';
 import {
-  Users, Calendar, CreditCard, Shield, CheckCircle, XCircle,
-  UserCheck, Ban, ChevronDown, ChevronUp, ClipboardList, MapPin, Star, UserPlus, FileImage,
-  Eye, X, Phone, Mail, Briefcase
+  Users, Calendar, CheckCircle, XCircle, AlertTriangle, RotateCcw,
+  UserCheck, Ban, ChevronDown, ChevronUp, ClipboardList, MapPin, Star, UserPlus, FileImage, Eye,
+  MessageCircle,
 } from 'lucide-react';
 
 const ROLE_LABELS = { maman: 'Cliente', etudiant: 'Prestataire (étudiant)', artisan: 'Prestataire', admin: 'Admin' };
 
 export default function Admin() {
-  const [tab, setTab] = useState('dashboard');
-  const [stats, setStats] = useState(null);
+  const [tab, setTab] = useState('bookings');
   const [pendingUsers, setPendingUsers] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [pendingBookings, setPendingBookings] = useState([]);
@@ -22,15 +23,10 @@ export default function Admin() {
   const [expandedUser, setExpandedUser] = useState(null);
   const [expandedBooking, setExpandedBooking] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
-  const [dossierProvider, setDossierProvider] = useState(null);
+  const [dossier, setDossier] = useState(null);
 
   const fetchTabData = useCallback(() => {
-    if (tab === 'dashboard') {
-      adminAPI.dashboard()
-        .then(({ data }) => setStats(data.stats))
-        .catch(() => {})
-        .finally(() => setLoading(false));
-    } else if (tab === 'pending') {
+    if (tab === 'pending') {
       adminAPI.pendingUsers()
         .then(({ data }) => setPendingUsers(data.data || []))
         .catch(() => {})
@@ -98,6 +94,19 @@ export default function Admin() {
     }
   };
 
+  const handleReactivate = async (userId) => {
+    setActionLoading(`validate-${userId}`);
+    try {
+      const { data } = await adminAPI.validateUser(userId);
+      setMessage({ type: 'success', text: 'Compte réactivé.' });
+      setAllUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...data.user } : u)));
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Erreur.' });
+    } finally {
+      setActionLoading('');
+    }
+  };
+
   const bookingIdKey = (id) => String(id);
 
   const handleExpandBooking = async (bookingId) => {
@@ -133,7 +142,6 @@ export default function Admin() {
   };
 
   const tabs = [
-    { id: 'dashboard', label: 'Tableau de bord', icon: Shield },
     { id: 'bookings', label: 'Attribuer prestataire', icon: ClipboardList },
     { id: 'pending', label: 'Comptes', icon: UserCheck },
     { id: 'users', label: 'Utilisateurs', icon: Users },
@@ -141,30 +149,6 @@ export default function Admin() {
 
   return (
     <div className="space-y-6">
-      {/* Hero header */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-dark via-primary to-primary-light px-4 py-5 text-white shadow-xl shadow-primary/20 sm:px-8 sm:py-7">
-        <div className="pointer-events-none absolute -left-20 -top-10 h-64 w-64 rounded-full bg-secondary/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 right-0 h-64 w-64 rounded-full bg-white/8 blur-3xl" />
-        <div className="relative">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-secondary-light ring-1 ring-white/15 mb-3">
-            <Shield size={12} /> Administration
-          </div>
-          <h1 className="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Pilotage de la plateforme</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/85">
-            Les mamans envoient des demandes sans prestataire ; les réservations en
-            <span className="font-semibold text-secondary-light"> « en attente admin » </span>
-            se traitent dans l&apos;onglet ci-dessous — choix du prestataire puis envoi à sa confirmation.
-          </p>
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-secondary opacity-65" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-secondary" />
-            </span>
-            Rafraîchissement automatique des listes
-          </div>
-        </div>
-      </section>
-
       {/* Onglets */}
       <div className="flex gap-1 overflow-x-auto bg-gray-100 rounded-xl p-1">
         {tabs.map(({ id, label, icon: Icon }) => (
@@ -191,48 +175,6 @@ export default function Admin() {
         </div>
       ) : (
         <>
-          {/* Tableau de bord */}
-          {tab === 'dashboard' && stats && (
-            <>
-              {stats.pending_bookings > 0 && (
-                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-amber-900">{stats.pending_bookings} demande(s) à attribuer</p>
-                    <p className="text-sm text-amber-800/90 mt-0.5">
-                      Choisissez un prestataire dans l&apos;onglet suivant ; il recevra la mission à accepter ou refuser.
-                    </p>
-                  </div>
-                  <button type="button" onClick={() => setTab('bookings')}
-                    className="shrink-0 inline-flex items-center justify-center gap-2 bg-secondary hover:bg-secondary-dark text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors">
-                    <ClipboardList size={18} /> Ouvrir l&apos;attribution
-                  </button>
-                </div>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { label: 'Utilisateurs', value: stats.total_users, icon: Users, wrap: 'bg-primary/15 text-primary' },
-                { label: 'Comptes en attente', value: stats.pending_accounts, icon: UserCheck, wrap: 'bg-amber-100 text-amber-800' },
-                { label: 'Réservations', value: stats.total_bookings, icon: Calendar, wrap: 'bg-secondary/15 text-secondary' },
-                { label: 'Réservations actives', value: stats.active_bookings, icon: Calendar, wrap: 'bg-primary/15 text-primary' },
-                { label: 'Commissions (FCFA)', value: Number(stats.total_revenue).toLocaleString(), icon: CreditCard, wrap: 'bg-secondary/15 text-secondary' },
-                { label: 'Volume total (FCFA)', value: Number(stats.total_payments).toLocaleString(), icon: CreditCard, wrap: 'bg-amber-100 text-amber-800' },
-              ].map(({ label, value, icon: Icon, wrap }) => (
-                <div key={label} className="rounded-2xl border border-gray-200/70 bg-surface p-5 shadow-sm transition hover:border-primary/25 hover:shadow-md hover:-translate-y-0.5">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${wrap}`}>
-                      <Icon size={22} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-display text-2xl font-bold tabular-nums text-gray-900">{value}</p>
-                      <p className="text-sm text-gray-500">{label}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              </div>
-            </>
-          )}
-
           {/* Demandes en en_attente_admin — équivalent Laravel AdminController @pendingBookings + assign */}
           {tab === 'bookings' && (
             pendingBookings.length === 0 ? (
@@ -281,12 +223,21 @@ export default function Admin() {
                           <p className="text-lg font-bold text-secondary">{Number(booking.total_price).toLocaleString()} FCFA</p>
                         </div>
                       </div>
-                      <div className="mt-4">
+                      <div className="mt-4 flex flex-wrap items-center gap-4">
                         <button type="button" onClick={() => handleExpandBooking(booking.id)}
                           className="flex items-center gap-2 text-sm font-bold text-primary hover:text-primary-dark transition-colors">
                           <UserPlus size={16} /> Attribuer un prestataire
                           {expandedBooking === bookingIdKey(booking.id) ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                         </button>
+                        {whatsappTrackingLink(booking) && (
+                          <a
+                            href={whatsappTrackingLink(booking)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-sm font-bold text-[#1ea952] hover:text-green-700 transition-colors">
+                            <MessageCircle size={16} /> Envoyer le suivi WhatsApp
+                          </a>
+                        )}
                       </div>
                     </div>
 
@@ -311,17 +262,37 @@ export default function Admin() {
                                     </div>
                                     <div>
                                       <p className="text-sm font-bold text-gray-900">{provider.name}</p>
-                                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
                                         <span>{provider.phone}</span>
                                         {provider.rating > 0 && (
                                           <span className="flex items-center gap-0.5 text-amber-500"><Star size={10} fill="currentColor" /> {provider.rating}</span>
                                         )}
                                         <span>{provider.missions_terminees} mission(s)</span>
+                                        {provider.category_price != null && (
+                                          <span>{Number(provider.category_price).toLocaleString('fr-FR')} FCFA</span>
+                                        )}
+                                        {provider.distance_km != null && (
+                                          <span className={`flex items-center gap-0.5 font-semibold ${
+                                            provider.distance_km <= 3 ? 'text-green-600' : provider.distance_km <= 10 ? 'text-secondary' : 'text-gray-500'
+                                          }`}>
+                                            <MapPin size={11} /> {provider.distance_km} km{provider.zone ? ` (${provider.zone})` : ''}
+                                            {provider.distance_km <= 3 ? ' · Très proche' : provider.distance_km <= 10 ? ' · Proche' : ''}
+                                          </span>
+                                        )}
+                                        {provider.distance_km == null && provider.zone && (
+                                          <span className="flex items-center gap-0.5"><MapPin size={11} /> {provider.zone}</span>
+                                        )}
+                                        {provider.busy_same_day > 0 && (
+                                          <span className="flex items-center gap-0.5 font-semibold text-amber-600"><AlertTriangle size={11} /> Occupé ce jour</span>
+                                        )}
+                                        {provider.a_refuse && (
+                                          <span className="flex items-center gap-0.5 font-semibold text-red-600"><XCircle size={11} /> A refusé cette demande</span>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <button onClick={() => setDossierProvider(provider)}
+                                    <button onClick={() => setDossier({ provider, bookingId: booking.id })}
                                       className="flex items-center gap-1 border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-lg text-xs font-semibold transition-colors">
                                       <Eye size={14} /> Dossier
                                     </button>
@@ -485,6 +456,12 @@ export default function Admin() {
                               {actionLoading === `suspend-${user.id}` ? '...' : <><Ban size={12} className="inline mr-1" />Suspendre</>}
                             </button>
                           )}
+                          {user.role !== 'admin' && user.profile?.status === 'suspended' && (
+                            <button onClick={() => handleReactivate(user.id)} disabled={!!actionLoading}
+                              className="text-xs text-secondary hover:text-secondary-dark font-bold disabled:opacity-50">
+                              {actionLoading === `validate-${user.id}` ? '...' : <><RotateCcw size={12} className="inline mr-1" />Réactiver</>}
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -496,151 +473,15 @@ export default function Admin() {
         </>
       )}
 
-      {/* ─── Modal Dossier Prestataire ─── */}
-      {dossierProvider && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setDossierProvider(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-100 px-4 py-3.5 sm:px-6 sm:py-4 flex items-center justify-between rounded-t-2xl z-10">
-              <h2 className="text-base sm:text-lg font-bold text-gray-900">Dossier du prestataire</h2>
-              <button onClick={() => setDossierProvider(null)} className="text-gray-400 hover:text-gray-700 p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="p-4 sm:p-6 space-y-5 sm:space-y-6">
-              {/* Profil principal */}
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 bg-gradient-to-br from-secondary to-secondary-dark text-white rounded-2xl flex items-center justify-center text-2xl font-bold overflow-hidden flex-shrink-0">
-                  {dossierProvider.photo
-                    ? <img src={`/storage/${dossierProvider.photo}`} alt="" className="w-full h-full object-cover" />
-                    : dossierProvider.name?.charAt(0)}
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">{dossierProvider.name}</h3>
-                  <span className="text-xs font-bold bg-primary/10 text-primary px-2.5 py-1 rounded-full">
-                    {ROLE_LABELS[dossierProvider.role]}
-                  </span>
-                  {dossierProvider.rating > 0 && (
-                    <div className="flex items-center gap-1 mt-1.5">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star key={s} size={16} className={s <= Math.round(dossierProvider.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-300'} />
-                      ))}
-                      <span className="text-sm font-bold text-gray-700 ml-1">{dossierProvider.rating}/5</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Informations de contact */}
-              <div className="bg-gray-50/80 rounded-xl p-4 space-y-3">
-                <h4 className="text-sm font-bold text-gray-800 mb-2">Informations personnelles</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Mail size={14} className="text-primary" />
-                    <span>{dossierProvider.email}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Phone size={14} className="text-primary" />
-                    <span>{dossierProvider.phone || 'Non renseigné'}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <MapPin size={14} className="text-primary" />
-                    <span>{dossierProvider.address || 'Non renseigné'}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Users size={14} className="text-primary" />
-                    <span>{dossierProvider.gender === 'homme' ? 'Homme' : dossierProvider.gender === 'femme' ? 'Femme' : 'Non renseigné'}</span>
-                  </div>
-                  {dossierProvider.date_of_birth && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Calendar size={14} className="text-primary" />
-                      <span>Né(e) le {new Date(dossierProvider.date_of_birth).toLocaleDateString('fr-FR')}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Calendar size={14} className="text-primary" />
-                    <span>Inscrit le {new Date(dossierProvider.created_at).toLocaleDateString('fr-FR')}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Statistiques */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-secondary/5 border border-secondary/20 rounded-xl p-4 text-center">
-                  <p className="text-2xl font-bold text-secondary">{dossierProvider.missions_terminees}</p>
-                  <p className="text-xs text-gray-500 mt-1">Missions terminées</p>
-                </div>
-                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
-                  <p className="text-2xl font-bold text-primary">{dossierProvider.services_count || 0}</p>
-                  <p className="text-xs text-gray-500 mt-1">Services proposés</p>
-                </div>
-              </div>
-
-              {/* Bio */}
-              {dossierProvider.bio && (
-                <div>
-                  <h4 className="text-sm font-bold text-gray-800 mb-2">Bio</h4>
-                  <p className="text-sm text-gray-600 bg-gray-50/80 rounded-xl p-3 leading-relaxed">{dossierProvider.bio}</p>
-                </div>
-              )}
-
-              {/* Pièce d'identité */}
-              <div>
-                <h4 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <FileImage size={16} className="text-primary" /> Pièce d&apos;identité
-                </h4>
-                {(dossierProvider.id_card_recto || dossierProvider.id_card_verso) ? (
-                  <div className="grid grid-cols-2 gap-3">
-                    {dossierProvider.id_card_recto && (
-                      <div className="border border-gray-200 rounded-xl overflow-hidden">
-                        <p className="text-xs font-bold text-gray-500 px-3 py-1.5 bg-gray-50">Recto</p>
-                        {dossierProvider.id_card_recto.endsWith('.pdf') ? (
-                          <a href={`/storage/${dossierProvider.id_card_recto}`} target="_blank" rel="noopener noreferrer"
-                            className="block p-4 text-center text-primary text-sm font-bold hover:bg-primary/5">
-                            <FileImage size={32} className="mx-auto mb-1" /> Voir le PDF
-                          </a>
-                        ) : (
-                          <a href={`/storage/${dossierProvider.id_card_recto}`} target="_blank" rel="noopener noreferrer">
-                            <img src={`/storage/${dossierProvider.id_card_recto}`} alt="Recto" className="w-full h-32 object-cover" />
-                          </a>
-                        )}
-                      </div>
-                    )}
-                    {dossierProvider.id_card_verso && (
-                      <div className="border border-gray-200 rounded-xl overflow-hidden">
-                        <p className="text-xs font-bold text-gray-500 px-3 py-1.5 bg-gray-50">Verso</p>
-                        {dossierProvider.id_card_verso.endsWith('.pdf') ? (
-                          <a href={`/storage/${dossierProvider.id_card_verso}`} target="_blank" rel="noopener noreferrer"
-                            className="block p-4 text-center text-primary text-sm font-bold hover:bg-primary/5">
-                            <FileImage size={32} className="mx-auto mb-1" /> Voir le PDF
-                          </a>
-                        ) : (
-                          <a href={`/storage/${dossierProvider.id_card_verso}`} target="_blank" rel="noopener noreferrer">
-                            <img src={`/storage/${dossierProvider.id_card_verso}`} alt="Verso" className="w-full h-32 object-cover" />
-                          </a>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-danger flex items-center gap-2 bg-red-50 p-3 rounded-xl">
-                    <XCircle size={16} /> Aucune pièce d&apos;identité fournie
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-3.5 sm:px-6 sm:py-4 rounded-b-2xl">
-              <button onClick={() => setDossierProvider(null)}
-                className="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProviderDossierModal
+        provider={dossier?.provider}
+        onClose={() => setDossier(null)}
+        assigning={!!dossier && actionLoading === `assign-${dossier.bookingId}-${dossier.provider.id}`}
+        onAssign={dossier ? async () => {
+          await handleAssignProvider(dossier.bookingId, dossier.provider.id);
+          setDossier(null);
+        } : undefined}
+      />
     </div>
   );
 }

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { serviceAPI, categoryAPI } from '../api/services';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { ArrowLeft, Plus, Clock } from 'lucide-react';
 
 export default function ServiceCreate() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [categories, setCategories] = useState([]);
   const [form, setForm] = useState({ category_id: '', title: '', description: '', price: '', location: '' });
   const [errors, setErrors] = useState({});
@@ -36,6 +38,31 @@ export default function ServiceCreate() {
       setLoading(false);
     }
   };
+
+  // Un prestataire non validé ne peut pas créer de service.
+  if (user && !user.verified) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-muted hover:text-primary text-sm font-medium transition-colors">
+          <ArrowLeft size={16} /> Retour
+        </button>
+        <div className="bg-surface rounded-2xl border border-gray-100 p-8 text-center space-y-4">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-600">
+            <Clock size={26} />
+          </span>
+          <h1 className="text-xl font-bold text-gray-900">Compte en attente de validation</h1>
+          <p className="text-sm text-gray-600 leading-relaxed max-w-md mx-auto">
+            Votre compte prestataire doit d'abord être validé par un administrateur avant de
+            pouvoir publier des services. Vous serez notifié dès l'approbation.
+          </p>
+          <Link to="/dashboard"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-dark">
+            Retour au tableau de bord
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AuthShell from '../components/AuthShell';
-import { LogIn, Mail, Phone, Lock, Eye, EyeOff, ShieldCheck, ArrowRight } from 'lucide-react';
+import { LogIn, Mail, Phone, Lock, Eye, EyeOff, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
 
 export default function Login() {
   const { login } = useAuth();
@@ -25,9 +25,8 @@ export default function Login() {
     setLoading(true);
     setError('');
     try {
-      const data = await login({ login: form.login.trim(), password: form.password });
-      const role = data.user.role;
-      navigate(role === 'admin' ? '/admin' : '/dashboard');
+      await login({ login: form.login.trim(), password: form.password });
+      navigate('/dashboard');
     } catch (err) {
       const fallback =
         err.code === 'ERR_NETWORK' || err.message === 'Network Error'
@@ -46,23 +45,24 @@ export default function Login() {
       subtitle="Accédez à votre espace personnel avec votre email ou numéro de téléphone."
     >
       {error && (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-danger">
-          <ShieldCheck size={18} className="mt-0.5 shrink-0" />
-          <span>{error}</span>
+        <div
+          role="alert"
+          className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50/80 p-4 text-sm text-danger"
+        >
+          <AlertCircle size={18} className="mt-0.5 shrink-0" />
+          <span className="leading-relaxed">{error}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label htmlFor="login" className="block text-sm font-semibold text-gray-800 mb-2">
+          <label htmlFor="login" className="mb-2 block text-[13px] font-bold text-gray-700">
             Email ou téléphone
           </label>
-          <div className="relative group">
-            {looksLikePhone ? (
-              <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-colors group-focus-within:text-primary" />
-            ) : (
-              <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-colors group-focus-within:text-primary" />
-            )}
+          <div className="group relative">
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-primary">
+              {looksLikePhone ? <Phone size={18} /> : <Mail size={18} />}
+            </span>
             <input
               id="login"
               name="login"
@@ -73,17 +73,23 @@ export default function Login() {
               value={form.login}
               onChange={handleChange}
               placeholder="vous@email.com ou +221 77 …"
-              className="w-full pl-12 pr-4 py-3.5 border border-gray-200 rounded-xl text-sm bg-gray-50/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
+              className="w-full rounded-2xl border border-gray-200 bg-gray-50/70 py-3.5 pl-12 pr-4 text-sm text-gray-900 placeholder:text-gray-400 transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/12"
             />
           </div>
+          <p className="mt-2 text-xs text-gray-400">
+            Utilisez l&apos;email ou le numéro fourni à l&apos;inscription.
+          </p>
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-semibold text-gray-800 mb-2">
+          <label htmlFor="password" className="mb-2 block text-[13px] font-bold text-gray-700">
             Mot de passe
           </label>
-          <div className="relative group">
-            <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none transition-colors group-focus-within:text-primary" />
+          <div className="group relative">
+            <Lock
+              size={18}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-primary"
+            />
             <input
               id="password"
               name="password"
@@ -93,46 +99,63 @@ export default function Login() {
               value={form.password}
               onChange={handleChange}
               placeholder="••••••••"
-              className="w-full pl-12 pr-12 py-3.5 border border-gray-200 rounded-xl text-sm bg-gray-50/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-white transition-all"
+              className="w-full rounded-2xl border border-gray-200 bg-gray-50/70 py-3.5 pl-12 pr-12 text-sm text-gray-900 placeholder:text-gray-400 transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/12"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-700 rounded-lg transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-primary focus:text-primary"
               aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              tabIndex={-1}
             >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
+          <p className="mt-2 text-xs text-gray-400">
+            Cliquez sur l&apos;œil pour afficher ou masquer le mot de passe.
+          </p>
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2.5 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white py-3.5 rounded-xl text-sm font-bold shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+          className="group mt-1 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-primary to-primary-dark py-4 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/35 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
         >
           {loading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <>
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              Connexion…
+            </>
           ) : (
             <>
               <LogIn size={18} />
               Se connecter
-              <ArrowRight size={16} className="opacity-70" />
+              <ArrowRight
+                size={16}
+                className="opacity-60 transition-transform group-hover:translate-x-0.5"
+              />
             </>
           )}
         </button>
       </form>
 
-      <div className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-gray-50 border border-gray-100 py-3 text-xs font-medium text-gray-500">
-        <ShieldCheck size={14} className="text-secondary" /> Connexion sécurisée et chiffrée
+      <div className="mt-7 flex items-center gap-3">
+        <span className="h-px flex-1 bg-gray-200/80" />
+        <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">ou</span>
+        <span className="h-px flex-1 bg-gray-200/80" />
       </div>
 
-      <p className="text-center mt-7 text-sm text-gray-500">
-        Pas encore de compte ?{' '}
-        <Link to="/register" className="font-bold text-primary hover:text-primary-dark transition-colors">
-          Créer un compte gratuit
-        </Link>
-      </p>
+      <Link
+        to="/register"
+        className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-gray-200 py-3.5 text-sm font-bold text-gray-700 transition-all hover:border-secondary hover:bg-secondary/5 hover:text-secondary-dark"
+      >
+        Créer un compte gratuit
+      </Link>
+
+      <div className="mt-6 flex items-center justify-center gap-2 text-xs font-medium text-gray-400">
+        <ShieldCheck size={14} className="text-secondary" />
+        Connexion sécurisée et chiffrée
+      </div>
     </AuthShell>
   );
 }

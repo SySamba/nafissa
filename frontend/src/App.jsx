@@ -16,6 +16,7 @@ import Notifications from './pages/Notifications';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
 import ServiceEdit from './pages/ServiceEdit';
+import Tracking from './pages/Tracking';
 
 function AppRoutes() {
   return (
@@ -23,18 +24,19 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/suivi/:token" element={<Tracking />} />
 
       <Route path="/dashboard" element={
         <ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>
       } />
       <Route path="/services" element={
-        <ProtectedRoute><Layout><Services /></Layout></ProtectedRoute>
+        <Layout><Services /></Layout>
       } />
       <Route path="/services/create" element={
         <ProtectedRoute><Layout><ServiceCreate /></Layout></ProtectedRoute>
       } />
       <Route path="/services/:id" element={
-        <ProtectedRoute><Layout><ServiceDetail /></Layout></ProtectedRoute>
+        <Layout><ServiceDetail /></Layout>
       } />
       <Route path="/services/:id/edit" element={
         <ProtectedRoute><Layout><ServiceEdit /></Layout></ProtectedRoute>

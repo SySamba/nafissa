@@ -38,9 +38,12 @@ export function AuthProvider({ children }) {
 
   const register = async (formData) => {
     const { data } = await authAPI.register(formData);
-    localStorage.setItem('nafissa_token', data.token);
-    localStorage.setItem('nafissa_user', JSON.stringify(data.user));
-    setUser(data.user);
+    // Un prestataire non validé ne reçoit pas de token : il attend l'approbation admin.
+    if (data.token) {
+      localStorage.setItem('nafissa_token', data.token);
+      localStorage.setItem('nafissa_user', JSON.stringify(data.user));
+      setUser(data.user);
+    }
     return data;
   };
 

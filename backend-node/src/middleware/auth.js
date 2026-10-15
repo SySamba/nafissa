@@ -8,3 +8,9 @@ export async function authMiddleware(request, reply) {
   request.user = session.user;
   request.accessToken = session.token;
 }
+
+export async function optionalAuthMiddleware(request, _reply) {
+  const session = await resolveAuth(request.headers.authorization);
+  request.user = session?.user || null;
+  request.accessToken = session?.token || null;
+}

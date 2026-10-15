@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
-import { stripUser } from '../lib/serializers.js';
+import { publicProvider, withPublicProvider } from '../lib/serializers.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
+import { geocodeAddress } from '../lib/geocode.js';
 
 const includeList = {
   provider: { include: { profile: true } },
@@ -24,18 +25,18 @@ export default async function serviceRoutes(fastify) {
     const page = Number(q.page) || 1;
     const perPage = 12;
 
-    const and = [{ available: true }, { provider: { verified: true } }];
-    if (q.category_id) and.push({ categoryId: BigInt(q.category_id) });
-    if (q.location) {
-      and.push({ location: { contains: q.location, mode: 'insensitive' } });
+    const and = [
+      { available: true },
+      { provider: { verified: true, profile: { status: 'active' } } },
+    ];
+    if (q.category_id && /^\d+$/.test(String(q.category_id))) {
+      and.push({ categoryId: BigInt(q.category_id) });
     }
+    // MySQL : les collations par défaut sont déjà insensibles à la casse (`mode` n'existe pas).
+    if (q.location) and.push({ location: { contains: String(q.location) } });
     if (q.search) {
-      and.push({
-        OR: [
-          { title: { contains: q.search, mode: 'insensitive' } },
-          { description: { contains: q.search, mode: 'insensitive' } },
-        ],
-      });
+      const s = String(q.search);
+      and.push({ OR: [{ title: { contains: s } }, { description: { contains: s } }] });
     }
     const priceFilter = {};
     if (q.min_price != null && q.min_price !== '') priceFilter.gte = Number(q.min_price);
@@ -61,7 +62,7 @@ export default async function serviceRoutes(fastify) {
       }),
     ]);
 
-    return laravelPaginated(rows, total, page, perPage, fullResourcePath(request));
+    return laravelPaginated(rows.map(withPublicProvider), total, page, perPage, fullResourcePath(request));
   });
 
   /** Prestataires vérifiés avec au moins une offre disponible dans la même catégorie (parcours client). */
@@ -100,20 +101,22 @@ export default async function serviceRoutes(fastify) {
       price: s.price,
       location: s.location,
       category: s.category,
-      provider: stripUser(s.provider),
+      provider: publicProvider(s.provider),
     }));
 
     return { providers };
   });
 
   fastify.get('/services/:id', async (request, reply) => {
-    const id = BigInt(request.params.id);
+    if (!/^\d+$/.test(String(request.params.id))) {
+      return reply.code(400).send({ message: 'ID invalide.' });
+    }
     const service = await prisma.service.findUnique({
-      where: { id },
+      where: { id: BigInt(request.params.id) },
       include: includeList,
     });
     if (!service) return reply.code(404).send({ message: 'Service introuvable.' });
-    return { service };
+    return { service: withPublicProvider(service) };
   });
 
   fastify.get('/categories', async () => {
@@ -140,6 +143,8 @@ export default async function serviceRoutes(fastify) {
       return reply.code(403).send({ message: 'Votre compte doit être validé par un administrateur.' });
     }
 
+    const coords = await geocodeAddress(location);
+
     const service = await prisma.service.create({
       data: {
         providerId: u.id,
@@ -148,6 +153,8 @@ export default async function serviceRoutes(fastify) {
         description: description ?? null,
         price,
         location: location ?? null,
+        lat: coords?.lat ?? null,
+        lng: coords?.lng ?? null,
       },
       include: includeList,
     });
@@ -182,7 +189,12 @@ export default async function serviceRoutes(fastify) {
     if (d.title !== undefined) data.title = d.title;
     if (d.description !== undefined) data.description = d.description;
     if (d.price !== undefined) data.price = d.price;
-    if (d.location !== undefined) data.location = d.location;
+    if (d.location !== undefined) {
+      data.location = d.location;
+      const coords = await geocodeAddress(d.location);
+      data.lat = coords?.lat ?? null;
+      data.lng = coords?.lng ?? null;
+    }
     if (d.available !== undefined) data.available = d.available;
 
     const service = await prisma.service.update({

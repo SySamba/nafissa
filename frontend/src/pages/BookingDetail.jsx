@@ -3,7 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { bookingAPI, paymentAPI, adminAPI } from '../api/services';
 import usePolling from '../hooks/usePolling';
-import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, CreditCard, Check, MapPin, FileText, Star, UserPlus, AlertTriangle } from 'lucide-react';
+import ProviderDossierModal from '../components/ProviderDossierModal';
+import { whatsappTrackingLink } from '../lib/whatsapp';
+import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, CreditCard, Check, MapPin, FileText, Star, UserPlus, AlertTriangle, Eye, MessageCircle } from 'lucide-react';
 
 const DISPUTE_REASONS = [
   'Retard ou absence',
@@ -60,6 +62,7 @@ export default function BookingDetail() {
   const [showRating, setShowRating] = useState(false);
   const [suggestedProviders, setSuggestedProviders] = useState([]);
   const [providersLoading, setProvidersLoading] = useState(false);
+  const [dossierProvider, setDossierProvider] = useState(null);
   const [showDispute, setShowDispute] = useState(false);
   const [disputeReason, setDisputeReason] = useState(DISPUTE_REASONS[0]);
   const [disputeText, setDisputeText] = useState('');
@@ -74,14 +77,18 @@ export default function BookingDetail() {
   useEffect(() => { fetchBooking(); }, [fetchBooking]);
   usePolling(fetchBooking, 10000, [id]);
 
+  // Ne recharger les suggestions que si la demande change réellement (pas à chaque polling).
+  const bookingId = booking?.id;
+  const bookingStatus = booking?.status;
+
   useEffect(() => {
-    if (!booking || user?.role !== 'admin' || booking.status !== 'en_attente_admin') {
+    if (!bookingId || user?.role !== 'admin' || bookingStatus !== 'en_attente_admin') {
       setSuggestedProviders([]);
       return;
     }
     let cancelled = false;
     setProvidersLoading(true);
-    adminAPI.suggestProviders(booking.id)
+    adminAPI.suggestProviders(bookingId)
       .then(({ data }) => {
         if (!cancelled) setSuggestedProviders(data.providers || []);
       })
@@ -92,7 +99,7 @@ export default function BookingDetail() {
         if (!cancelled) setProvidersLoading(false);
       });
     return () => { cancelled = true; };
-  }, [booking, user?.role]);
+  }, [bookingId, bookingStatus, user?.role]);
 
   const handleAssignFromDetail = async (providerId) => {
     setActionLoading(`assign-${providerId}`);
@@ -303,6 +310,15 @@ export default function BookingDetail() {
                   {booking.client?.name?.charAt(0)}
                 </div>
                 <span className="text-sm font-medium">{booking.client?.name}</span>
+                {isAdminRole && whatsappTrackingLink(booking) && (
+                  <a
+                    href={whatsappTrackingLink(booking)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-1 inline-flex items-center gap-1 rounded-lg bg-[#1ea952]/10 px-2 py-1 text-xs font-bold text-[#1ea952] transition-colors hover:bg-[#1ea952]/20">
+                    <MessageCircle size={13} /> Suivi WhatsApp
+                  </a>
+                )}
               </div>
             </div>
             <div>
@@ -363,8 +379,34 @@ export default function BookingDetail() {
                 <li key={p.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white border border-amber-100 rounded-xl p-4">
                   <div>
                     <p className="font-semibold text-gray-900">{p.name}</p>
-                    <p className="text-xs text-muted">{p.phone} · {p.missions_terminees} mission(s) · note {typeof p.rating === 'number' ? p.rating : Number(p.rating) || '—'}</p>
+                    <p className="text-xs text-muted">
+                      {p.phone} · {p.missions_terminees} mission(s) · note {Number(p.rating) || '—'}
+                    </p>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+                      {p.distance_km != null && (
+                        <span className={`inline-flex items-center gap-1 font-semibold ${
+                          p.distance_km <= 3 ? 'text-green-600' : p.distance_km <= 10 ? 'text-secondary' : 'text-gray-500'
+                        }`}>
+                          <MapPin size={12} /> à {p.distance_km} km{p.zone ? ` (${p.zone})` : ''}
+                          {p.distance_km <= 3 ? ' — Très proche' : p.distance_km <= 10 ? ' — Proche' : ''}
+                        </span>
+                      )}
+                      {p.distance_km == null && p.zone && (
+                        <span className="inline-flex items-center gap-1 text-muted"><MapPin size={12} /> zone : {p.zone}</span>
+                      )}
+                    </p>
+                    {p.busy_same_day > 0 && (
+                      <p className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-amber-700"><AlertTriangle size={12} /> Déjà une mission ce jour-là</p>
+                    )}
+                    {p.a_refuse && (
+                      <p className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-red-600"><XCircle size={12} /> A déjà refusé cette demande</p>
+                    )}
                   </div>
+                  <div className="flex shrink-0 gap-2">
+                  <button type="button" onClick={() => setDossierProvider(p)}
+                    className="inline-flex items-center justify-center gap-1.5 border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-xl text-sm font-semibold">
+                    <Eye size={16} /> Dossier
+                  </button>
                   <button type="button" onClick={() => handleAssignFromDetail(p.id)} disabled={!!actionLoading}
                     className="shrink-0 inline-flex items-center justify-center gap-2 bg-secondary hover:bg-secondary-dark text-white px-4 py-2 rounded-xl text-sm font-semibold disabled:opacity-50">
                     {actionLoading === `assign-${p.id}` ? (
@@ -373,10 +415,20 @@ export default function BookingDetail() {
                       <><CheckCircle size={16} /> Attribuer</>
                     )}
                   </button>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
+          <ProviderDossierModal
+            provider={dossierProvider}
+            onClose={() => setDossierProvider(null)}
+            assigning={!!dossierProvider && actionLoading === `assign-${dossierProvider.id}`}
+            onAssign={dossierProvider ? async () => {
+              await handleAssignFromDetail(dossierProvider.id);
+              setDossierProvider(null);
+            } : undefined}
+          />
         </div>
       )}
 
@@ -388,7 +440,9 @@ export default function BookingDetail() {
         {isClient && booking.status === 'en_attente_admin' && (
           <>
             <p className="text-sm text-muted bg-amber-50 p-3 rounded-lg">⏳ Votre demande est en cours d&apos;analyse par l&apos;administrateur.</p>
-            <button onClick={() => handleStatusChange('annulee')} disabled={!!actionLoading}
+            <button onClick={() => {
+              if (window.confirm('Annuler définitivement cette demande ?')) handleStatusChange('annulee');
+            }} disabled={!!actionLoading}
               className="w-full flex items-center justify-center gap-2 border-2 border-danger text-danger hover:bg-red-50 py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
               {actionLoading === 'annulee' ? <div className="w-4 h-4 border-2 border-danger border-t-transparent rounded-full animate-spin" /> : <><XCircle size={16} /> Annuler la demande</>}
             </button>
@@ -407,7 +461,11 @@ export default function BookingDetail() {
               className="flex-1 flex items-center justify-center gap-2 bg-secondary hover:bg-secondary-dark text-white py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
               {actionLoading === 'acceptee' ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><CheckCircle size={16} /> Accepter</>}
             </button>
-            <button onClick={() => handleStatusChange('refusee')} disabled={!!actionLoading}
+            <button onClick={() => {
+              if (window.confirm('Refuser cette mission ? La demande retournera à l\'administrateur pour une nouvelle attribution.')) {
+                handleStatusChange('refusee');
+              }
+            }} disabled={!!actionLoading}
               className="flex-1 flex items-center justify-center gap-2 bg-danger hover:bg-red-600 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
               {actionLoading === 'refusee' ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><XCircle size={16} /> Refuser</>}
             </button>

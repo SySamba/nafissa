@@ -6,6 +6,17 @@ import { authMiddleware } from '../middleware/auth.js';
 import { adminMiddleware } from '../middleware/admin.js';
 import { stripUser, userWithProfile } from '../lib/serializers.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
+import { TOKENABLE_TYPE } from '../lib/auth-resolve.js';
+import { locateArea, distanceKm } from '../lib/dakar-areas.js';
+import { sendWhatsApp, clientStatusText } from '../lib/whatsapp-send.js';
+
+function revokeTokens(userId) {
+  return prisma.personalAccessToken.deleteMany({
+    where: { tokenableType: TOKENABLE_TYPE, tokenableId: userId },
+  });
+}
+
+const ACTIVE_STATUSES = [BS.EN_ATTENTE_PRESTATAIRE, BS.ACCEPTEE, BS.PAYEE, BS.EN_COURS];
 
 const bookingIncludeAdmin = {
   service: { include: { category: true } },
@@ -100,18 +111,96 @@ export default async function adminRoutes(fastify) {
         role: { in: ['etudiant', 'artisan'] },
         verified: true,
         profile: { status: 'active' },
-        services: { some: { categoryId: catId } },
+        services: { some: { categoryId: catId, available: true } },
       },
-      include: { profile: true, services: true },
+      include: {
+        profile: true,
+        services: { include: { category: true }, orderBy: { createdAt: 'desc' } },
+      },
     });
+    // Prestataires ayant déjà refusé cette demande (signalés et relégués en fin de liste).
+    const refuserIds = new Set(
+      (Array.isArray(booking.refusedBy) ? booking.refusedBy : []).map(String),
+    );
 
-    const providers = [];
-    for (const p of candidates) {
-      const completedMissions = await prisma.booking.count({
-        where: { providerId: p.id, status: BS.TERMINEE },
-      });
-      providers.push({
-        id: p.id.toString(),
+    // Lieu d'intervention : coordonnées géocodées en priorité, carte des
+    // quartiers en repli pour les anciennes données non géocodées.
+    const interventionLoc =
+      booking.lat != null && booking.lng != null
+        ? { lat: Number(booking.lat), lng: Number(booking.lng) }
+        : locateArea(booking.location);
+
+    const ids = candidates.map((p) => p.id);
+
+    const [statusCounts, sameDay, reviews] = ids.length
+      ? await Promise.all([
+          prisma.booking.groupBy({
+            by: ['providerId', 'status'],
+            where: { providerId: { in: ids } },
+            _count: { _all: true },
+          }),
+          prisma.booking.findMany({
+            where: {
+              providerId: { in: ids },
+              bookingDate: booking.bookingDate,
+              status: { in: ACTIVE_STATUSES },
+              id: { not: booking.id },
+            },
+            select: { providerId: true, bookingTime: true },
+          }),
+          prisma.booking.findMany({
+            where: { providerId: { in: ids }, rating: { not: null } },
+            select: {
+              providerId: true,
+              rating: true,
+              review: true,
+              updatedAt: true,
+              service: { select: { title: true } },
+              client: { select: { name: true } },
+            },
+            orderBy: { updatedAt: 'desc' },
+          }),
+        ])
+      : [[], [], []];
+
+    const byProvider = (rows) => {
+      const m = new Map();
+      for (const r of rows) {
+        const k = r.providerId.toString();
+        if (!m.has(k)) m.set(k, []);
+        m.get(k).push(r);
+      }
+      return m;
+    };
+    const countsMap = byProvider(statusCounts);
+    const sameDayMap = byProvider(sameDay);
+    const reviewsMap = byProvider(reviews);
+
+    const providers = candidates.map((p) => {
+      const key = p.id.toString();
+      const counts = Object.fromEntries(
+        (countsMap.get(key) || []).map((c) => [c.status, c._count._all]),
+      );
+      const total = Object.values(counts).reduce((a, b) => a + b, 0);
+      const providerReviews = reviewsMap.get(key) || [];
+      const busy = sameDayMap.get(key) || [];
+      const matching = p.services.filter((s) => s.categoryId === catId && s.available);
+      // Distance : coordonnées du service dans la catégorie demandée en
+      // priorité, sinon coordonnées du compte, sinon quartier reconnu.
+      const zoneArea =
+        locateArea(matching[0]?.location) ||
+        locateArea(p.address) ||
+        locateArea(p.profile?.location);
+      const providerLoc =
+        (matching[0]?.lat != null && matching[0]?.lng != null
+          ? { lat: Number(matching[0].lat), lng: Number(matching[0].lng) }
+          : null) ||
+        (p.lat != null && p.lng != null ? { lat: Number(p.lat), lng: Number(p.lng) } : null) ||
+        zoneArea;
+      const distance = distanceKm(interventionLoc, providerLoc);
+      const zone = zoneArea?.name || matching[0]?.location || p.address || p.profile?.location || null;
+      return {
+        id: key,
         name: p.name,
         email: p.email,
         phone: p.phone,
@@ -126,12 +215,48 @@ export default async function adminRoutes(fastify) {
         rating: p.profile ? Number(p.profile.rating) : 0,
         bio: p.profile?.bio,
         avatar: p.profile?.avatar,
-        missions_terminees: completedMissions,
+        location: p.profile?.location,
+        profile_status: p.profile?.status,
+        documents: p.profile?.documents ?? null,
+        missions_terminees: counts[BS.TERMINEE] || 0,
+        missions_en_cours: ACTIVE_STATUSES.reduce((a, s) => a + (counts[s] || 0), 0),
+        missions_annulees: counts[BS.ANNULEE] || 0,
+        missions_total: total,
         services_count: p.services.length,
-      });
-    }
+        category_price: matching.length ? Math.min(...matching.map((s) => Number(s.price))) : null,
+        services: p.services.map((s) => ({
+          id: s.id,
+          title: s.title,
+          price: s.price,
+          location: s.location,
+          available: s.available,
+          category: s.category?.name,
+          same_category: s.categoryId === catId,
+        })),
+        reviews_count: providerReviews.length,
+        recent_reviews: providerReviews.slice(0, 5).map((r) => ({
+          rating: r.rating,
+          review: r.review,
+          date: r.updatedAt,
+          service: r.service?.title,
+          client: r.client?.name?.split(' ')[0] || 'Cliente',
+        })),
+        busy_same_day: busy.length,
+        busy_times: busy.map((b) => b.bookingTime.toISOString().slice(11, 16)),
+        a_refuse: refuserIds.has(key),
+        zone,
+        distance_km: distance,
+      };
+    });
 
-    providers.sort((a, b) => b.rating - a.rating);
+    providers.sort(
+      (a, b) =>
+        (a.a_refuse ? 1 : 0) - (b.a_refuse ? 1 : 0) ||
+        (a.distance_km ?? 9999) - (b.distance_km ?? 9999) ||
+        (a.busy_same_day > 0) - (b.busy_same_day > 0) ||
+        b.rating - a.rating ||
+        b.missions_terminees - a.missions_terminees,
+    );
 
     return { providers };
   });
@@ -157,7 +282,7 @@ export default async function adminRoutes(fastify) {
     if (!provider || (provider.role !== 'etudiant' && provider.role !== 'artisan')) {
       return reply.code(422).send({ message: 'Ce prestataire n\'est pas valide.' });
     }
-    if (!provider.verified) {
+    if (!provider.verified || provider.profile?.status !== 'active') {
       return reply.code(422).send({ message: 'Ce prestataire n\'est pas valide.' });
     }
 
@@ -187,6 +312,18 @@ export default async function adminRoutes(fastify) {
       bp,
     );
 
+    // Suivi WhatsApp automatique : la cliente et le prestataire sont prévenus.
+    await sendWhatsApp(
+      booking.client?.phone,
+      clientStatusText({ ...booking, status: BS.EN_ATTENTE_PRESTATAIRE }),
+      request.log,
+    );
+    await sendWhatsApp(
+      provider.phone,
+      `Nouvelle mission NAFISSA : « ${booking.service.title} » à ${booking.location || 'Dakar'}, le ${booking.bookingDate.toISOString().slice(0, 10)}. Connectez-vous à votre espace pour accepter ou refuser.`,
+      request.log,
+    );
+
     return {
       message: 'Prestataire attribué avec succès.',
       booking: updated,
@@ -197,7 +334,11 @@ export default async function adminRoutes(fastify) {
     const page = Number(request.query?.page) || 1;
     const perPage = 10;
 
-    const where = { verified: false, role: { in: ['etudiant', 'artisan'] } };
+    const where = {
+      verified: false,
+      role: { in: ['etudiant', 'artisan'] },
+      NOT: { profile: { status: 'suspended' } },
+    };
 
     const [total, rows] = await prisma.$transaction([
       prisma.user.count({ where }),
@@ -218,7 +359,9 @@ export default async function adminRoutes(fastify) {
     const id = BigInt(request.params.id);
     const user = await prisma.user.findUnique({ where: { id }, include: { profile: true } });
     if (!user) return reply.code(404).send({ message: 'Non trouvé.' });
-    if (user.verified) return reply.code(422).send({ message: 'Ce compte est déjà validé.' });
+    if (user.verified && user.profile?.status === 'active') {
+      return reply.code(422).send({ message: 'Ce compte est déjà validé.' });
+    }
 
     await prisma.user.update({ where: { id }, data: { verified: true } });
     await prisma.profile.updateMany({ where: { userId: id }, data: { status: 'active' } });
@@ -238,6 +381,7 @@ export default async function adminRoutes(fastify) {
     if (!user) return reply.code(404).send({ message: 'Non trouvé.' });
 
     await prisma.profile.updateMany({ where: { userId: id }, data: { status: 'suspended' } });
+    await revokeTokens(id);
     const reason = parsed.data.reason ?? 'Documents insuffisants.';
     await notify(
       id,
@@ -286,6 +430,7 @@ export default async function adminRoutes(fastify) {
     }
 
     await prisma.profile.updateMany({ where: { userId: id }, data: { status: 'suspended' } });
+    await revokeTokens(id);
     await notify(
       id,
       'account',

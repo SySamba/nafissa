@@ -44,6 +44,10 @@ export const paymentAPI = {
   history: (params) => apiClient.get('/payments/history', { params }),
 };
 
+export const trackingAPI = {
+  show: (token) => apiClient.get(`/suivi/${token}`),
+};
+
 export const notificationAPI = {
   list: (params) => apiClient.get('/notifications', { params }),
   unreadCount: () => apiClient.get('/notifications/unread-count'),

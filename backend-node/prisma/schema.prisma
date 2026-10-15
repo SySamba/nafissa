@@ -67,7 +67,7 @@ enum NotificationType {
 model User {
   id              BigInt    @id @default(autoincrement())
   name            String    @db.VarChar(255)
-  email           String    @unique @db.VarChar(255)
+  email           String    @db.VarChar(255)
   phone           String?   @db.VarChar(20)
   role            UserRole  @default(maman)
   verified        Boolean   @default(false)
@@ -80,6 +80,8 @@ model User {
   dateOfBirth     DateTime? @map("date_of_birth") @db.Date
   idCardRecto     String?   @map("id_card_recto") @db.VarChar(255)
   idCardVerso     String?   @map("id_card_verso") @db.VarChar(255)
+  lat             Float?
+  lng             Float?
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
@@ -89,6 +91,7 @@ model User {
   bookingsAsProvider Booking[]          @relation("ProviderBookings")
   notifications      NotificationRow[]
 
+  @@unique([email, role])
   @@map("users")
 }
 
@@ -132,6 +135,8 @@ model Service {
   price       Decimal  @db.Decimal(10, 2)
   location    String?  @db.VarChar(200)
   available   Boolean  @default(true)
+  lat         Float?
+  lng         Float?
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -156,6 +161,12 @@ model Booking {
   description  String?       @db.Text
   rating       Int?          @db.SmallInt
   review       String?       @db.Text
+  refusedBy    Json?         @map("refused_by")
+  /// Lien de suivi public pour les demandes faites sans compte (envoyé par WhatsApp).
+  trackingToken String?       @unique @map("tracking_token") @db.VarChar(64)
+  /// Coordonnées du lieu d'intervention (géocodage automatique).
+  lat          Float?
+  lng          Float?
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
 

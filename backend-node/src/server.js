@@ -16,6 +16,7 @@ import paymentRoutes from './routes/payments.js';
 import notificationRoutes from './routes/notifications.js';
 import adminRoutes from './routes/admin.js';
 import marketRoutes from './routes/market.js';
+import trackingRoutes from './routes/tracking.js';
 
 dotenv.config();
 
@@ -62,6 +63,7 @@ export async function buildApp() {
   const apiOpts = { prefix: '/api' };
   await fastify.register(authRoutes, apiOpts);
   await fastify.register(marketRoutes, apiOpts);
+  await fastify.register(trackingRoutes, apiOpts);
   await fastify.register(serviceRoutes, apiOpts);
   await fastify.register(bookingRoutes, apiOpts);
   await fastify.register(paymentRoutes, apiOpts);
@@ -69,6 +71,28 @@ export async function buildApp() {
   await fastify.register(adminRoutes, apiOpts);
 
   fastify.get('/up', async () => ({ status: 'ok' }));
+
+  // Production : servir le build Vite du frontend + repli SPA (toute route
+  // non-API renvoie index.html pour React Router).
+  const frontendDist =
+    process.env.FRONTEND_DIST || path.join(__dirname, '..', '..', 'frontend', 'dist');
+  if (fs.existsSync(frontendDist)) {
+    await fastify.register(fastifyStatic, {
+      root: frontendDist,
+      prefix: '/',
+      index: ['index.html'],
+    });
+    fastify.setNotFoundHandler((request, reply) => {
+      const isAssetRoute =
+        request.method === 'GET' &&
+        !request.url.startsWith('/api') &&
+        !request.url.startsWith('/storage');
+      if (isAssetRoute) return reply.sendFile('index.html');
+      return reply.code(404).send({ message: 'Introuvable.' });
+    });
+  } else {
+    fastify.log.warn(`Build frontend absent (${frontendDist}), seule l'API est servie.`);
+  }
 
   fastify.addHook('preSerialization', async (_request, _reply, payload) => {
     if (payload && typeof payload === 'object') {

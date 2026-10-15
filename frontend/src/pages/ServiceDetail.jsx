@@ -13,6 +13,8 @@ import {
   Trash2,
   FileText,
   AlertCircle,
+  User,
+  Phone,
 } from 'lucide-react';
 import { categoryVisual } from '../lib/categoryImages';
 
@@ -29,11 +31,15 @@ export default function ServiceDetail() {
     notes: '',
     location: '',
     description: '',
+    guest_name: '',
+    guest_phone: '',
   });
   const [showBooking, setShowBooking] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [guestContact, setGuestContact] = useState(null);
+  const [trackingToken, setTrackingToken] = useState(null);
 
   useEffect(() => {
     serviceAPI
@@ -72,10 +78,23 @@ export default function ServiceDetail() {
     setSubmitting(true);
     setError('');
     try {
-      await bookingAPI.create({ service_id: Number(id), ...bookingForm });
-      setSuccess("Demande envoyée ! L'administrateur va attribuer un prestataire.");
+      const payload = { service_id: Number(id), ...bookingForm };
+      const { data } = await bookingAPI.create(payload);
+      setSuccess(data.message || "Demande envoyée !");
       setShowBooking(false);
-      setTimeout(() => navigate('/bookings'), 2500);
+      if (user) {
+        setTimeout(() => navigate('/bookings'), 2500);
+      } else {
+        if (data.tracking_token) setTrackingToken(data.tracking_token);
+        setGuestContact({ name: bookingForm.guest_name, phone: bookingForm.guest_phone });
+        setBookingForm((p) => ({
+          ...p,
+          guest_name: '',
+          guest_phone: '',
+          description: '',
+          notes: '',
+        }));
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Erreur lors de la demande.');
     } finally {
@@ -112,7 +131,7 @@ export default function ServiceDetail() {
   /** Prestataires vérifiés dans la même catégorie (offre publiée) */
   const hasMarket = providers.length > 0;
   const uniqueProviderCount = new Set(providers.map((r) => r.provider?.id).filter(Boolean)).size;
-  const canRequestBooking = Boolean(isMaman && !isOwner && listingOk && hasMarket);
+  const canRequestBooking = Boolean((!user || isMaman) && !isOwner && listingOk && hasMarket);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -124,8 +143,31 @@ export default function ServiceDetail() {
       </button>
 
       {success && (
-        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl flex items-center gap-2">
-          <Check size={18} /> {success}
+        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl space-y-3">
+          <p className="flex items-center gap-2">
+            <Check size={18} /> {success}
+          </p>
+          {!user && trackingToken && (
+            <div className="rounded-xl border border-primary/20 bg-white/70 p-4">
+              <p className="text-sm font-semibold text-gray-800">Votre lien de suivi — gardez-le précieusement&nbsp;:</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <code className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs text-gray-700 break-all">{window.location.origin}/suivi/{trackingToken}</code>
+                <a
+                  href={`/suivi/${trackingToken}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white hover:bg-primary-dark">
+                  Suivre ma demande
+                </a>
+              </div>
+              <p className="mt-2 text-xs text-muted">Notre équipe peut aussi vous envoyer ce lien et vos nouvelles par WhatsApp.</p>
+            </div>
+          )}
+          {!user && guestContact && (
+            <Link
+              to={`/register?name=${encodeURIComponent(guestContact.name)}&phone=${encodeURIComponent(guestContact.phone)}`}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark">
+              Créer mon compte pour suivre ma demande
+            </Link>
+          )}
         </div>
       )}
 
@@ -194,9 +236,9 @@ export default function ServiceDetail() {
         </div>
       </div>
 
-      {isMaman && !isOwner && (
+      {(!user || isMaman) && !isOwner && (
         <div className="rounded-2xl border border-primary/15 bg-gradient-to-br from-primary/5 via-white to-secondary/10 p-5 sm:p-6 shadow-sm">
-          {!hasMarket ? (
+              {!hasMarket ? (
             <>
               <h2 className="text-lg font-bold text-gray-900">Prestataires sur cette famille de services</h2>
               <div className="mt-4 flex gap-3 rounded-xl border border-amber-200 bg-white/85 p-4 text-sm text-amber-900">
@@ -231,10 +273,16 @@ export default function ServiceDetail() {
         </div>
       )}
 
-      {isMaman && !isOwner && (
+      {(!user || isMaman) && !isOwner && (
         <div className="bg-surface rounded-2xl border border-gray-100 p-6 sm:p-8">
           {!showBooking ? (
             <div className="space-y-3">
+              {!user && (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
+                  <strong>Demande rapide sans compte</strong> — laissez juste votre nom et votre téléphone, notre équipe vous recontacte.{' '}
+                  <Link to="/register" className="font-semibold underline underline-offset-2">Créer un compte</Link> pour suivre et payer en ligne.
+                </div>
+              )}
               {!canRequestBooking ? (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                   {!listingOk ? (
@@ -254,7 +302,7 @@ export default function ServiceDetail() {
                   ? 'bg-primary hover:bg-primary-dark text-white'
                   : 'cursor-not-allowed bg-gray-200 text-gray-400'
                   }`}>
-                <Calendar size={18} /> Faire une demande pour cette offre
+                <Calendar size={18} /> {user ? 'Faire une demande pour cette offre' : 'Demande rapide (sans compte)'}
               </button>
             </div>
           ) : (
@@ -268,6 +316,42 @@ export default function ServiceDetail() {
                 <div className="mb-4 p-3 bg-red-50 border border-red-200 text-danger text-sm rounded-lg">{error}</div>
               )}
               <form onSubmit={handleBooking} className="space-y-4">
+                {!user && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-xl border border-primary/15 bg-primary/5 p-4">
+                    <div>
+                      <label htmlFor="guest_name" className="block text-sm font-medium text-gray-700 mb-1">Votre nom complet</label>
+                      <div className="relative">
+                        <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                        <input
+                          id="guest_name"
+                          type="text"
+                          required
+                          minLength={2}
+                          value={bookingForm.guest_name}
+                          onChange={(e) => setBookingForm((p) => ({ ...p, guest_name: e.target.value }))}
+                          placeholder="Ex: Awa Ndiaye"
+                          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="guest_phone" className="block text-sm font-medium text-gray-700 mb-1">Votre téléphone</label>
+                      <div className="relative">
+                        <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                        <input
+                          id="guest_phone"
+                          type="tel"
+                          required
+                          value={bookingForm.guest_phone}
+                          onChange={(e) => setBookingForm((p) => ({ ...p, guest_phone: e.target.value }))}
+                          placeholder="Ex: 77 123 45 67"
+                          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-muted">Notre équipe vous appellera sur ce numéro.</p>
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="booking_date" className="block text-sm font-medium text-gray-700 mb-1">Date souhaitée</label>
