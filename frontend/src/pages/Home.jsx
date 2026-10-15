@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import BrandMark from '../components/BrandMark';
 import {
   ArrowRight, Star, Shield, Clock, CreditCard, Users, CheckCircle,
   Sparkles, Baby, Home as HomeIcon, BookOpen, ChefHat, Zap,
   Heart, Phone, MapPin, Mail, ChevronRight, Play, MapPinned, Cpu, LayoutDashboard,
-  Shirt, ShoppingCart, Droplets, Hammer
+  Shirt, ShoppingCart, Droplets, Hammer, Menu, X
 } from 'lucide-react';
 import { homepageCategoryVisual } from '../lib/categoryImages';
 // Hero image depuis le dossier public/
@@ -76,6 +77,8 @@ function renderServiceCard({ icon: Icon, name, desc, slug }) {
 
 export default function Home() {
   const { user } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = () => setMenuOpen(false);
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
@@ -84,7 +87,7 @@ export default function Home() {
           NAVBAR
       ═══════════════════════════════════════════════════════════ */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-2xl border-b border-gray-100/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-20">
           <BrandMark to="/" />
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-500">
             <a href="#services" className="hover:text-primary transition-colors">Services</a>
@@ -106,8 +109,33 @@ export default function Home() {
                 </Link>
               </>
             )}
+            <button
+              type="button"
+              onClick={() => setMenuOpen((o) => !o)}
+              className="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+              aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
         </div>
+
+        {/* Menu mobile déroulant */}
+        {menuOpen && (
+          <div className="md:hidden border-t border-gray-100 bg-white/95 backdrop-blur-2xl">
+            <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-1 text-sm font-semibold text-gray-700">
+              <a href="#services" onClick={closeMenu} className="rounded-xl px-3 py-3 hover:bg-gray-50 hover:text-primary transition-colors">Services</a>
+              <a href="#how" onClick={closeMenu} className="rounded-xl px-3 py-3 hover:bg-gray-50 hover:text-primary transition-colors">Comment ça marche</a>
+              <a href="#contact" onClick={closeMenu} className="rounded-xl px-3 py-3 hover:bg-gray-50 hover:text-primary transition-colors">Contact</a>
+              {!user && (
+                <Link to="/login" onClick={closeMenu} className="rounded-xl px-3 py-3 text-primary hover:bg-primary/5 transition-colors">
+                  Connexion
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* ═══════════════════════════════════════════════════════════

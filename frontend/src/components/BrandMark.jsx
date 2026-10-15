@@ -15,7 +15,7 @@ export default function BrandMark({
   const size = compact ? 'text-base sm:text-lg' : 'text-lg sm:text-2xl';
   const tracking = compact ? 'tracking-[0.14em]' : 'tracking-[0.22em]';
   const tone = light ? 'text-white' : 'text-primary-dark';
-  const logoSize = logoClassName || (compact ? 'h-10 w-10 sm:h-24 sm:w-24' : 'h-32 w-32 sm:h-36 sm:w-36');
+  const logoSize = logoClassName || (compact ? 'h-10' : 'h-12 sm:h-14');
   return (
     <Link
       to={to}
@@ -25,7 +25,7 @@ export default function BrandMark({
       <img
         src="/logo-nafissa.png"
         alt="NAFISSA"
-        className={`${logoSize} shrink-0 rounded-2xl object-contain ${light ? 'bg-white/95 p-2 shadow-sm' : ''}`}
+        className={`${logoSize} w-auto shrink-0 object-contain ${light ? 'rounded-2xl bg-white/95 p-2 shadow-sm' : ''}`}
       />
       {showText ? (
         <span className={`font-black font-display uppercase ${size} ${tracking} ${tone}`}>

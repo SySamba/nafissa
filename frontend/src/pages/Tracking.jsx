@@ -72,7 +72,7 @@ export default function Tracking() {
     <div className="min-h-screen bg-bg">
       <header className="border-b border-gray-100 bg-surface px-4 py-3">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <BrandMark to="/" compact logoClassName="h-12 w-12" />
+          <BrandMark to="/" compact logoClassName="h-10 w-auto" />
           <span className="text-xs font-semibold text-muted">Suivi de demande</span>
         </div>
       </header>

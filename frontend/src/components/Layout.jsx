@@ -73,7 +73,7 @@ export default function Layout({ children }) {
     <div className="flex h-full min-h-0 flex-col bg-surface">
       {/* Logo area */}
       <div className="flex justify-center border-b border-gray-100 px-5 py-3">
-        <BrandMark to={homePath} compact logoClassName="h-28 w-28 lg:h-36 lg:w-36" onAfterNavigate={closeMobile} />
+        <BrandMark to={homePath} compact logoClassName="h-16 lg:h-20 w-auto max-w-full" onAfterNavigate={closeMobile} />
       </div>
 
       {/* Navigation */}
@@ -207,7 +207,7 @@ export default function Layout({ children }) {
             >
               <Menu size={22} />
             </button>
-            <BrandMark to={homePath} compact logoClassName="h-12 w-12" />
+            <BrandMark to={homePath} compact logoClassName="h-10 w-auto" />
           </div>
 
           <div className="flex items-center gap-2">
