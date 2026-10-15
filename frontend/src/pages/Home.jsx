@@ -108,7 +108,7 @@ export default function Home() {
                 <Link to="/login" className="hidden sm:inline-flex text-gray-600 hover:text-primary px-4 py-2.5 text-sm font-semibold transition-colors">
                   Connexion
                 </Link>
-                <Link to="/register" className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-primary/25 hover:shadow-primary/40">
+                <Link to="/register" className="hidden md:inline-flex bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-primary/25 hover:shadow-primary/40">
                   S&apos;inscrire
                 </Link>
               </>
