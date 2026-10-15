@@ -4,7 +4,7 @@
   "private": true,
   "description": "NAFISSA — monorepo (frontend Vite/React + backend Fastify/Prisma). Déployé en un seul processus : le backend sert le build du frontend.",
   "scripts": {
-    "install:all": "npm --prefix frontend install && npm --prefix backend-node install",
+    "install:all": "npm --prefix frontend install --include=dev && npm --prefix backend-node install --include=dev",
     "postinstall": "npm run install:all",
     "build": "npm run install:all && npm --prefix frontend run build && npm --prefix backend-node run db:generate",
     "db:setup": "npm --prefix backend-node run db:push",
