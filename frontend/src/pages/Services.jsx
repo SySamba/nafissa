@@ -184,12 +184,12 @@ export default function Services() {
           {services.map((service) => (
             <Link key={service.id} to={`/services/${service.id}`}
               className="bg-surface rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow group relative block">
-              <div className={`relative h-36 overflow-hidden bg-gradient-to-br ${categoryVisual(service.category || {}).gradient}`}>
+              <div className={`relative h-44 sm:h-36 overflow-hidden bg-gradient-to-br ${categoryVisual(service.category || {}).gradient}`}>
                 <img
                   src={categoryVisual(service.category || {}).image}
                   alt={service.category?.name || 'Service'}
                   loading="lazy"
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+                  className="h-full w-full object-cover object-[center_30%] transition-transform duration-500 group-hover:scale-[1.05]"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
                 <span className="absolute bottom-3 left-3 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm bg-black/25 px-2 py-0.5 rounded-md backdrop-blur-[2px]">

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import BrandMark from '../components/BrandMark';
+import InstallPwa from '../components/InstallPwa';
 import {
   ArrowRight, Star, Shield, Clock, CreditCard, Users, CheckCircle,
   Sparkles, Baby, Home as HomeIcon, BookOpen, ChefHat, Zap,
@@ -95,6 +96,9 @@ export default function Home() {
             <a href="#contact" className="hover:text-primary transition-colors">Contact</a>
           </div>
           <div className="flex items-center gap-3">
+            <div className="hidden md:flex">
+              <InstallPwa />
+            </div>
             {user ? (
               <Link to="/dashboard" className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-primary/25 hover:shadow-primary/40">
                 Mon espace <ChevronRight size={14} className="inline ml-1" />
@@ -129,10 +133,22 @@ export default function Home() {
               <a href="#how" onClick={closeMenu} className="rounded-xl px-3 py-3 hover:bg-gray-50 hover:text-primary transition-colors">Comment ça marche</a>
               <a href="#contact" onClick={closeMenu} className="rounded-xl px-3 py-3 hover:bg-gray-50 hover:text-primary transition-colors">Contact</a>
               {!user && (
-                <Link to="/login" onClick={closeMenu} className="rounded-xl px-3 py-3 text-primary hover:bg-primary/5 transition-colors">
-                  Connexion
-                </Link>
+                <>
+                  <Link to="/login" onClick={closeMenu} className="rounded-xl px-3 py-3 text-primary hover:bg-primary/5 transition-colors">
+                    Connexion
+                  </Link>
+                  <Link
+                    to="/register"
+                    onClick={closeMenu}
+                    className="mt-1 rounded-xl bg-primary px-3 py-3 text-center font-bold text-white transition-colors hover:bg-primary-dark"
+                  >
+                    S'inscrire
+                  </Link>
+                </>
               )}
+              <div className="px-3 pt-2">
+                <InstallPwa />
+              </div>
             </div>
           </div>
         )}

@@ -173,7 +173,7 @@ export default function ServiceDetail() {
 
       <div className="bg-surface rounded-2xl border border-gray-100 overflow-hidden">
         <div className={`relative h-44 sm:h-56 bg-gradient-to-br ${cover.gradient}`}>
-          <img src={cover.image} alt={service.category?.name || ''} className="h-full w-full object-cover" />
+          <img src={cover.image} alt={service.category?.name || ''} className="h-full w-full object-cover object-[center_30%]" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
           <span className="absolute bottom-4 left-4 text-sm font-medium bg-white/90 text-primary px-3 py-1 rounded-full backdrop-blur-sm">
             {service.category?.name}
