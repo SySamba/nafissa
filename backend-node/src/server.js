@@ -29,7 +29,9 @@ BigInt.prototype.toJSON = function () {
 
 export async function buildApp() {
   const fastify = Fastify({
-    logger: process.env.NODE_ENV !== 'production',
+    // Logger toujours actif : indispensable pour diagnostiquer l'exécution
+    // (les journaux Hostinger capturent stdout). LOG_LEVEL=warn pour réduire.
+    logger: { level: process.env.LOG_LEVEL || 'info' },
     trustProxy: true,
     bodyLimit: 12 * 1024 * 1024,
   });
