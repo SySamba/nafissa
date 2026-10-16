@@ -6,7 +6,7 @@ import { BS } from '../lib/constants.js';
 import { notify, notifyAdmins, bookingDetailPath } from '../lib/notifications.js';
 import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
-import { sendWhatsApp, clientStatusText, trackingLink } from '../lib/whatsapp-send.js';
+import { sendWhatsApp, clientStatusText, trackingLink, waParams } from '../lib/whatsapp-send.js';
 import { geocodeAddress } from '../lib/geocode.js';
 
 const bookingInclude = {
@@ -174,6 +174,7 @@ export default async function bookingRoutes(fastify) {
       client.phone,
       `Bonjour ${client.name},\n\nVotre demande NAFISSA n°${booking.id} — « ${booking.service.title} » a bien été reçue. Notre équipe sélectionne le meilleur prestataire disponible près de chez vous.\n\nSuivez-la en temps réel : ${trackingLink(booking.trackingToken)}\n\n— L'équipe NAFISSA`,
       request.log,
+      waParams(client.name, booking, `« ${booking.service.title} » a bien été reçue. Notre équipe sélectionne le meilleur prestataire disponible près de chez vous.`),
     );
 
     return reply.code(201).send({
@@ -271,6 +272,8 @@ export default async function bookingRoutes(fastify) {
       await sendWhatsApp(
         updated.client?.phone,
         `Bonjour${updated.client?.name ? ` ${updated.client.name}` : ''},\n\nLe prestataire choisi pour votre demande NAFISSA n°${updated.id} — « ${updated.service.title} » n'est pas disponible. Notre équipe vous attribue un autre prestataire.\n\nSuivi : ${trackingLink(updated.trackingToken)}\n\n— L'équipe NAFISSA`,
+        request.log,
+        waParams(updated.client?.name, updated, `« ${updated.service.title} » — le prestataire choisi n'est pas disponible. Notre équipe vous attribue un autre prestataire.`),
       );
       return {
         message: `Mission refusée. L'administrateur va attribuer un autre prestataire.`,
@@ -439,5 +442,5 @@ async function sendStatusNotifications(booking, newStatus) {
   }
 
   // Suivi automatique par WhatsApp vers la cliente à chaque changement de statut.
-  await sendWhatsApp(booking.client?.phone, clientStatusText(booking));
+  await sendWhatsApp(booking.client?.phone, clientStatusText(booking), undefined, waParams(booking.client?.name, booking));
 }

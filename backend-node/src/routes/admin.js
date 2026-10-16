@@ -8,7 +8,7 @@ import { stripUser, userWithProfile } from '../lib/serializers.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
 import { TOKENABLE_TYPE } from '../lib/auth-resolve.js';
 import { locateArea, distanceKm } from '../lib/dakar-areas.js';
-import { sendWhatsApp, clientStatusText } from '../lib/whatsapp-send.js';
+import { sendWhatsApp, clientStatusText, waParams } from '../lib/whatsapp-send.js';
 
 function revokeTokens(userId) {
   return prisma.personalAccessToken.deleteMany({
@@ -317,11 +317,13 @@ export default async function adminRoutes(fastify) {
       booking.client?.phone,
       clientStatusText({ ...booking, status: BS.EN_ATTENTE_PRESTATAIRE }),
       request.log,
+      waParams(booking.client?.name, { ...booking, status: BS.EN_ATTENTE_PRESTATAIRE }),
     );
     await sendWhatsApp(
       provider.phone,
       `Nouvelle mission NAFISSA : « ${booking.service.title} » à ${booking.location || 'Dakar'}, le ${booking.bookingDate.toISOString().slice(0, 10)}. Connectez-vous à votre espace pour accepter ou refuser.`,
       request.log,
+      waParams(provider.name, booking, `Nouvelle mission « ${booking.service.title} » à ${booking.location || 'Dakar'} le ${booking.bookingDate.toISOString().slice(0, 10)}. Connectez-vous pour accepter ou refuser.`),
     );
 
     return {

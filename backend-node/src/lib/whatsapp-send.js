@@ -30,11 +30,55 @@ export function trackingLink(token) {
   return token ? `${base}/suivi/${token}` : base;
 }
 
-/** Envoie un texte WhatsApp. Ne lève jamais d'erreur : renvoie { sent, reason }. */
-export async function sendWhatsApp(to, text, logger = noop) {
+/**
+ * Paramètres du template `nafissa_notification` (ordre {{1}}..{{4}}) :
+ * prénom, n° de demande, phrase de détail, lien de suivi.
+ */
+export function waParams(recipientName, booking, detail) {
+  const firstName = String(recipientName || 'Client(e)').trim().split(/\s+/)[0] || 'Client(e)';
+  return [
+    firstName,
+    String(booking?.id ?? ''),
+    detail || waDetail(booking),
+    trackingLink(booking?.trackingToken),
+  ];
+}
+
+/**
+ * Envoie un message WhatsApp. Ne lève jamais d'erreur : renvoie { sent, reason }.
+ * Si WHATSAPP_TEMPLATE_NAME est défini et que `params` est fourni, on envoie le
+ * template approuvé (obligatoire pour joindre des numéros hors fenêtre 24 h) ;
+ * sinon texte libre (suffisant pour le numéro de test Meta).
+ */
+export async function sendWhatsApp(to, text, logger = noop, params = null) {
   const number = normalizeWaNumber(to);
   if (!number) return { sent: false, reason: 'numéro invalide' };
   if (!whatsappEnabled()) return { sent: false, reason: 'non configuré' };
+
+  const templateName = process.env.WHATSAPP_TEMPLATE_NAME;
+  const payload =
+    templateName && Array.isArray(params)
+      ? {
+          messaging_product: 'whatsapp',
+          to: number,
+          type: 'template',
+          template: {
+            name: templateName,
+            language: { code: process.env.WHATSAPP_TEMPLATE_LANG || 'fr' },
+            components: [
+              {
+                type: 'body',
+                parameters: params.map((v) => ({ type: 'text', text: String(v) })),
+              },
+            ],
+          },
+        }
+      : {
+          messaging_product: 'whatsapp',
+          to: number,
+          type: 'text',
+          text: { body: text, preview_url: true },
+        };
 
   try {
     const res = await fetch(
@@ -45,12 +89,7 @@ export async function sendWhatsApp(to, text, logger = noop) {
           Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: number,
-          type: 'text',
-          text: { body: text, preview_url: true },
-        }),
+        body: JSON.stringify(payload),
       },
     );
     if (!res.ok) {
@@ -75,13 +114,18 @@ const STATUS_LABELS = {
   annulee: 'annulée. Contactez-nous pour toute question.',
 };
 
+/** Phrase de détail pour le template/message de suivi. */
+export function waDetail(booking) {
+  const label = STATUS_LABELS[booking.status] || booking.status;
+  return `« ${booking.service?.title || 'service'} » est ${label}`;
+}
+
 /** Message de suivi envoyé à la cliente à chaque changement de statut. */
 export function clientStatusText(booking) {
-  const label = STATUS_LABELS[booking.status] || booking.status;
   const parts = [
     `Bonjour${booking.client?.name ? ` ${booking.client.name}` : ''},`,
     '',
-    `Votre demande NAFISSA n°${booking.id} — « ${booking.service?.title || 'service'} » est ${label}.`,
+    `Votre demande NAFISSA n°${booking.id} — ${waDetail(booking)}.`,
   ];
   if (booking.trackingToken) {
     parts.push('', `Suivez-la en temps réel : ${trackingLink(booking.trackingToken)}`);
