@@ -57,6 +57,12 @@ async function findUsersByLoginIdentifier(identifier) {
   }
   const variants = collectPhoneVariants(id);
   const orPhone = variants.map((phone) => ({ phone }));
+  // Numéro étranger saisi sans indicatif : correspondance par suffixe sur les
+  // numéros stockés au format international (+225…, +33…).
+  const digits = id.replace(/\D/g, '');
+  if (digits.length >= 8 && !id.includes('+')) {
+    orPhone.push({ phone: { endsWith: digits } });
+  }
   if (orPhone.length === 0) return [];
   // Plusieurs comptes peuvent partager le même numéro : on les teste tous.
   return prisma.user.findMany({

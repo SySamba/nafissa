@@ -44,6 +44,38 @@ function SectionTitle({ icon: Icon, children }) {
 const FIELD_BASE =
   'w-full rounded-2xl border bg-gray-50/70 py-3.5 text-sm text-gray-900 placeholder:text-gray-400 transition-all focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/12';
 
+// Indicatifs téléphoniques — Afrique de l'Ouest/Centrale, Maghreb, diaspora.
+const DIAL_CODES = [
+  ['+221', '🇸🇳 Sénégal'],
+  ['+223', '🇲🇱 Mali'],
+  ['+224', '🇬🇳 Guinée'],
+  ['+225', "🇨🇮 Côte d'Ivoire"],
+  ['+226', '🇧🇫 Burkina Faso'],
+  ['+227', '🇳🇪 Niger'],
+  ['+228', '🇹🇬 Togo'],
+  ['+229', '🇧🇯 Bénin'],
+  ['+232', '🇸🇱 Sierra Leone'],
+  ['+233', '🇬🇭 Ghana'],
+  ['+234', '🇳🇬 Nigéria'],
+  ['+235', '🇹🇩 Tchad'],
+  ['+236', '🇨🇫 Centrafrique'],
+  ['+237', '🇨🇲 Cameroun'],
+  ['+238', '🇨🇻 Cap-Vert'],
+  ['+240', '🇬🇶 Guinée équat.'],
+  ['+241', '🇬🇦 Gabon'],
+  ['+242', '🇨🇬 Congo'],
+  ['+243', '🇨🇩 RD Congo'],
+  ['+245', '🇬🇼 Guinée-Bissau'],
+  ['+220', '🇬🇲 Gambie'],
+  ['+222', '🇲🇷 Mauritanie'],
+  ['+212', '🇲🇦 Maroc'],
+  ['+213', '🇩🇿 Algérie'],
+  ['+216', '🇹🇳 Tunisie'],
+  ['+218', '🇱🇾 Libye'],
+  ['+33', '🇫🇷 France'],
+  ['+1', '🇺🇸 USA/Canada'],
+];
+
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -64,6 +96,7 @@ export default function Register() {
   const [idCardRecto, setIdCardRecto] = useState(null);
   const [idCardVerso, setIdCardVerso] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [dialCode, setDialCode] = useState('+221');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [pendingApproval, setPendingApproval] = useState(false);
@@ -97,7 +130,11 @@ export default function Register() {
     setErrors({});
     try {
       const formData = new FormData();
-      Object.entries(form).forEach(([key, value]) => { if (value) formData.append(key, value); });
+      Object.entries(form).forEach(([key, value]) => {
+        if (value && key !== 'phone') formData.append(key, value);
+      });
+      const localDigits = form.phone.replace(/\D/g, '');
+      if (localDigits) formData.append('phone', `${dialCode}${localDigits}`);
       if (isPrestataire && selectedCategories.length) {
         formData.append('category_ids', JSON.stringify(selectedCategories));
       }
@@ -302,10 +339,22 @@ export default function Register() {
 
             <div>
               <label htmlFor="phone" className="mb-2 block text-[13px] font-bold text-gray-700">Téléphone</label>
-              <div className="group relative">
-                <Phone size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-primary" />
-                <input id="phone" name="phone" type="tel" autoComplete="tel" value={form.phone} onChange={handleChange}
-                  placeholder="+221 7X XXX XX XX" className={inputClass('phone')} />
+              <div className="flex gap-2">
+                <select
+                  value={dialCode}
+                  onChange={(e) => setDialCode(e.target.value)}
+                  aria-label="Indicatif du pays"
+                  className="w-[8.5rem] shrink-0 rounded-2xl border border-gray-200 bg-gray-50/70 py-3.5 pl-3 pr-1 text-sm text-gray-900 transition-all focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/12"
+                >
+                  {DIAL_CODES.map(([code, label]) => (
+                    <option key={code} value={code}>{label}</option>
+                  ))}
+                </select>
+                <div className="group relative flex-1">
+                  <Phone size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 transition-colors group-focus-within:text-primary" />
+                  <input id="phone" name="phone" type="tel" autoComplete="tel-national" value={form.phone} onChange={handleChange}
+                    placeholder="7X XXX XX XX" className={inputClass('phone')} />
+                </div>
               </div>
               {fieldError('phone')}
             </div>

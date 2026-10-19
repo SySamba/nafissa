@@ -72,7 +72,7 @@ export default function Login() {
               inputMode={looksLikePhone ? 'tel' : 'email'}
               value={form.login}
               onChange={handleChange}
-              placeholder="vous@email.com ou +221 77 …"
+              placeholder="vous@email.com ou 77 378 48 14"
               className="w-full rounded-2xl border border-gray-200 bg-gray-50/70 py-3.5 pl-12 pr-4 text-sm text-gray-900 placeholder:text-gray-400 transition-all focus:border-primary focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/12"
             />
           </div>
