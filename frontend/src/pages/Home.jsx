@@ -463,8 +463,9 @@ export default function Home() {
               <h4 className="font-bold text-sm mb-5 text-white uppercase tracking-wider">Contact</h4>
               <ul className="space-y-3 text-sm text-gray-400">
                 <li className="flex items-center gap-3"><MapPin size={16} className="text-secondary flex-shrink-0" /> Dakar, Sénégal</li>
-                <li className="flex items-center gap-3"><Mail size={16} className="text-primary flex-shrink-0" /> contact@nafissa.sn</li>
-                <li className="flex items-center gap-3"><Phone size={16} className="text-accent flex-shrink-0" /> +221 77 000 00 00</li>
+                <li className="flex items-center gap-3"><Mail size={16} className="text-primary flex-shrink-0" /> <a href="mailto:contact1@digital-porokhane.com" className="hover:text-white transition-colors">contact1@digital-porokhane.com</a></li>
+                <li className="flex items-center gap-3"><Phone size={16} className="text-accent flex-shrink-0" /> <a href="tel:+221338306157" className="hover:text-white transition-colors">+221 33 830 61 57</a></li>
+                <li className="flex items-center gap-3"><Phone size={16} className="text-accent flex-shrink-0" /> <a href="tel:+221710589088" className="hover:text-white transition-colors">+221 71 058 90 88</a></li>
               </ul>
             </div>
           </div>
