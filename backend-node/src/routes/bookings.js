@@ -8,7 +8,7 @@ import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
 import { sendWhatsApp, clientStatusText, trackingLink, waParams } from '../lib/whatsapp-send.js';
 import { geocodeAddress } from '../lib/geocode.js';
-import { hideProviderForClient } from '../lib/serializers.js';
+import { bookingForViewer } from '../lib/serializers.js';
 
 const bookingInclude = {
   service: { include: { category: true } },
@@ -211,7 +211,7 @@ export default async function bookingRoutes(fastify) {
       }),
     ]);
 
-    const data = rows.map((b) => hideProviderForClient(b, user));
+    const data = rows.map((b) => bookingForViewer(b, user));
     return laravelPaginated(data, total, page, perPage, fullResourcePath(request));
   });
 
@@ -226,7 +226,7 @@ export default async function bookingRoutes(fastify) {
     if (booking.clientId !== u.id && booking.providerId !== u.id && !isAdmin(u.role)) {
       return reply.code(403).send({ message: 'Non autorisé.' });
     }
-    return { booking: hideProviderForClient(booking, u) };
+    return { booking: bookingForViewer(booking, u) };
   });
 
   fastify.patch('/bookings/:id/status', { preHandler: authMiddleware }, async (request, reply) => {
@@ -279,7 +279,7 @@ export default async function bookingRoutes(fastify) {
       );
       return {
         message: `Mission refusée. L'administrateur va attribuer un autre prestataire.`,
-        booking: hideProviderForClient(updated, request.user),
+        booking: bookingForViewer(updated, request.user),
       };
     }
 
@@ -291,7 +291,7 @@ export default async function bookingRoutes(fastify) {
 
     await sendStatusNotifications(updated, newStatus);
 
-    return { message: 'Statut mis à jour.', booking: hideProviderForClient(updated, request.user) };
+    return { message: 'Statut mis à jour.', booking: bookingForViewer(updated, request.user) };
   });
 
   fastify.post('/bookings/:id/rate', { preHandler: authMiddleware }, async (request, reply) => {
@@ -352,7 +352,7 @@ export default async function bookingRoutes(fastify) {
 
     return reply.send({
       message: 'Merci pour votre évaluation !',
-      booking: hideProviderForClient(updated, request.user),
+      booking: bookingForViewer(updated, request.user),
     });
   });
 

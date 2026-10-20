@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hideProviderForClient, publicProvider, stripUser, withPublicProvider } from './serializers.js';
+import { bookingForViewer, publicProvider, stripUser, withHiddenProvider, withPublicProvider } from './serializers.js';
 
 describe('publicProvider', () => {
   const provider = {
@@ -34,28 +34,60 @@ describe('publicProvider', () => {
   });
 });
 
-describe('hideProviderForClient', () => {
+describe('bookingForViewer', () => {
   const booking = {
     id: 5,
     providerId: 7,
-    provider: { id: 7, name: 'Awa', phone: '+221770000000', email: 'awa@x.com', idCardRecto: 'x' },
+    provider: {
+      id: 7,
+      name: 'Awa',
+      role: 'artisan',
+      verified: true,
+      photo: null,
+      phone: '+221770000000',
+      email: 'awa@x.com',
+      idCardRecto: 'x',
+      profile: { rating: 4.5, status: 'active' },
+    },
   };
 
-  it('masks the provider identity for the client', () => {
-    const out = hideProviderForClient(booking, { id: 1, role: 'maman' });
-    expect(out.provider).toEqual({ id: 7, name: 'Attribué' });
-    expect(out.provider.phone).toBeUndefined();
-    expect(out.provider.email).toBeUndefined();
+  it('shows the public provider identity to the client, without contacts', () => {
+    const out = bookingForViewer(booking, { id: 1, role: 'maman' });
+    expect(out.provider.name).toBe('Awa');
+    expect(out.provider.profile.rating).toBe(4.5);
+    for (const k of ['phone', 'email', 'idCardRecto']) {
+      expect(out.provider[k]).toBeUndefined();
+    }
   });
 
   it('keeps the full provider for admin and the assigned provider', () => {
-    expect(hideProviderForClient(booking, { id: 9, role: 'admin' }).provider.name).toBe('Awa');
-    expect(hideProviderForClient(booking, { id: 7, role: 'artisan' }).provider.name).toBe('Awa');
+    expect(bookingForViewer(booking, { id: 9, role: 'admin' }).provider.phone).toBe('+221770000000');
+    expect(bookingForViewer(booking, { id: 7, role: 'artisan' }).provider.phone).toBe('+221770000000');
   });
 
   it('passes through when no provider is assigned', () => {
     const unassigned = { id: 5, providerId: null, provider: null };
-    expect(hideProviderForClient(unassigned, { id: 1, role: 'maman' })).toBe(unassigned);
+    expect(bookingForViewer(unassigned, { id: 1, role: 'maman' })).toBe(unassigned);
+  });
+});
+
+describe('withHiddenProvider', () => {
+  it('hides the provider and exposes an availability flag', () => {
+    const service = {
+      id: 1,
+      title: 'T',
+      providerId: 7,
+      provider: { verified: true, name: 'Awa', profile: { status: 'active' } },
+    };
+    const out = withHiddenProvider(service);
+    expect(out.provider).toBe(null);
+    expect(out.provider_active).toBe(true);
+    expect(out.providerId).toBe(7);
+  });
+
+  it('flags inactive provider listings', () => {
+    const out = withHiddenProvider({ provider: { verified: false, profile: { status: 'pending' } } });
+    expect(out.provider_active).toBe(false);
   });
 });
 

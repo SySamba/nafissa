@@ -31,14 +31,30 @@ export function withPublicProvider(service) {
 }
 
 /**
- * Le client ne doit jamais voir l'identité du prestataire (nom, contacts,
- * photo) : l'administration reste l'intermédiaire entre les deux parties.
- * Le prestataire attribué et l'admin gardent la vue complète.
+ * Vue du prestataire dans une réservation :
+ * - admin et prestataire attribué : fiche complète (contacts inclus) ;
+ * - client : identité publique uniquement (nom, photo, note) — jamais
+ *   de téléphone, email ni pièces d'identité.
  */
-export function hideProviderForClient(booking, user) {
+export function bookingForViewer(booking, user) {
   if (!booking?.provider) return booking;
   if (user?.role === 'admin' || user?.id === booking.providerId) return booking;
-  return { ...booking, provider: { id: booking.provider.id, name: 'Attribué' } };
+  return { ...booking, provider: publicProvider(booking.provider) };
+}
+
+/**
+ * Vue publique d'une annonce : le prestataire n'est pas identifiable avant
+ * l'attribution (c'est l'équipe qui choisit le profil). On expose juste un
+ * indicateur « annonce réservable » au lieu des données du prestataire.
+ */
+export function withHiddenProvider(service) {
+  if (!service) return service;
+  const { provider, ...rest } = service;
+  return {
+    ...rest,
+    provider: null,
+    provider_active: provider?.verified === true && provider?.profile?.status === 'active',
+  };
 }
 
 export function stripUser(u) {

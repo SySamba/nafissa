@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { serviceAPI, bookingAPI } from '../api/services';
 import {
   MapPin,
-  Star,
   Calendar,
   Clock,
   ArrowLeft,
@@ -126,8 +125,8 @@ export default function ServiceDetail() {
   const cover = categoryVisual(service.category || {});
   const listingOk =
     service.available !== false &&
-    service.provider?.verified === true &&
-    service.provider?.profile?.status === 'active';
+    (service.provider_active === true ||
+      (service.provider?.verified === true && service.provider?.profile?.status === 'active'));
   /** Prestataires vérifiés dans la même catégorie (offre publiée) */
   const hasMarket = providers.length > 0;
   const uniqueProviderCount = new Set(providers.map((r) => r.provider?.id).filter(Boolean)).size;
@@ -193,22 +192,13 @@ export default function ServiceDetail() {
           )}
 
           <div className="mt-6 pt-6 border-t border-gray-100">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Prestataire référencé</h3>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center text-lg font-bold">
-                {service.provider?.name?.charAt(0)}
+            <div className="flex items-center gap-3 rounded-xl bg-primary/5 border border-primary/10 px-4 py-3">
+              <div className="w-10 h-10 shrink-0 bg-primary/10 text-primary rounded-full flex items-center justify-center">
+                <Check size={20} />
               </div>
-              <div>
-                <p className="font-semibold text-gray-900">{service.provider?.name}</p>
-                {service.provider?.profile?.rating > 0 && (
-                  <span className="flex items-center gap-1 text-sm text-accent">
-                    <Star size={14} fill="currentColor" /> {service.provider.profile.rating} / 5
-                  </span>
-                )}
-                {service.provider?.profile?.bio && (
-                  <p className="text-sm text-muted mt-1">{service.provider.profile.bio}</p>
-                )}
-              </div>
+              <p className="text-sm text-gray-700">
+                <span className="font-semibold">Annonce vérifiée.</span> Notre équipe attribue le prestataire adapté à votre demande.
+              </p>
             </div>
             {!listingOk ? (
               <p className="mt-4 flex items-start gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
-import { publicProvider, withPublicProvider } from '../lib/serializers.js';
+import { withHiddenProvider } from '../lib/serializers.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
 import { geocodeAddress } from '../lib/geocode.js';
@@ -62,7 +62,7 @@ export default async function serviceRoutes(fastify) {
       }),
     ]);
 
-    return laravelPaginated(rows.map(withPublicProvider), total, page, perPage, fullResourcePath(request));
+    return laravelPaginated(rows.map(withHiddenProvider), total, page, perPage, fullResourcePath(request));
   });
 
   /** Prestataires vérifiés avec au moins une offre disponible dans la même catégorie (parcours client). */
@@ -101,7 +101,7 @@ export default async function serviceRoutes(fastify) {
       price: s.price,
       location: s.location,
       category: s.category,
-      provider: publicProvider(s.provider),
+      provider: { id: s.provider.id },
     }));
 
     return { providers };
@@ -116,7 +116,7 @@ export default async function serviceRoutes(fastify) {
       include: includeList,
     });
     if (!service) return reply.code(404).send({ message: 'Service introuvable.' });
-    return { service: withPublicProvider(service) };
+    return { service: withHiddenProvider(service) };
   });
 
   fastify.get('/categories', async () => {
