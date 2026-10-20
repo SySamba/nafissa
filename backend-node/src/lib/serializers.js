@@ -30,6 +30,17 @@ export function withPublicProvider(service) {
   return service ? { ...service, provider: publicProvider(service.provider) } : service;
 }
 
+/**
+ * Le client ne doit jamais voir l'identité du prestataire (nom, contacts,
+ * photo) : l'administration reste l'intermédiaire entre les deux parties.
+ * Le prestataire attribué et l'admin gardent la vue complète.
+ */
+export function hideProviderForClient(booking, user) {
+  if (!booking?.provider) return booking;
+  if (user?.role === 'admin' || user?.id === booking.providerId) return booking;
+  return { ...booking, provider: { id: booking.provider.id, name: 'Attribué' } };
+}
+
 export function stripUser(u) {
   if (!u) return u;
   const { password, rememberToken, ...rest } = u;

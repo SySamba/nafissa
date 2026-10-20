@@ -32,9 +32,7 @@ export default async function trackingRoutes(fastify) {
         lieu: booking.location,
         montant: booking.totalPrice,
         creee_le: booking.createdAt,
-        prestataire: booking.provider
-          ? { nom: booking.provider.name, note: booking.provider.profile?.rating }
-          : null,
+        prestataire: booking.provider ? { nom: 'Prestataire attribué' } : null,
       },
     };
   });
