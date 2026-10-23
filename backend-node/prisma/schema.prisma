@@ -71,6 +71,8 @@ model User {
   phone           String?   @db.VarChar(20)
   role            UserRole  @default(maman)
   verified        Boolean   @default(false)
+  /// Prestataire disponible pour recevoir des propositions de mission.
+  isAvailable     Boolean   @default(true) @map("is_available")
   emailVerifiedAt DateTime? @map("email_verified_at")
   password        String    @db.VarChar(255)
   rememberToken   String?   @map("remember_token") @db.VarChar(100)

@@ -19,7 +19,12 @@ import {
   CheckCircle,
   Briefcase,
   ClipboardList,
+  CalendarDays,
+  Wallet,
+  LifeBuoy,
+  Loader,
 } from 'lucide-react';
+import { authAPI } from '../api/services';
 
 const ROLE_LABELS = {
   maman: 'Cliente',
@@ -29,7 +34,7 @@ const ROLE_LABELS = {
 };
 
 export default function Layout({ children }) {
-  const { user, logout, isAdmin, isMaman } = useAuth();
+  const { user, logout, isAdmin, isMaman, isPrestataire, loadUser } = useAuth();
   const navigate = useNavigate();
   const homePath = user ? '/dashboard' : '/';
   const location = useLocation();
@@ -88,13 +93,29 @@ export default function Layout({ children }) {
       ];
     }
     return [
-      { to: '/dashboard', label: 'Tableau de bord', desc: 'Résumé de vos missions et offres.', icon: Home },
-      { to: '/bookings', label: 'Mes missions', desc: 'Missions attribuées par l\'équipe.', icon: Calendar },
-      { to: '/services', label: 'Mes services', desc: 'Publier et gérer vos offres.', icon: Briefcase },
-      { to: '/payments', label: 'Paiements', desc: 'Historique des versements.', icon: CreditCard },
+      { to: '/dashboard', label: 'Tableau de bord', desc: 'Résumé de l\'activité.', icon: Home },
+      { to: '/services', label: 'Mes services', desc: 'Créer, modifier et désactiver ses annonces.', icon: Briefcase },
+      { to: '/bookings', label: 'Mes missions', desc: 'Consulter les propositions et les missions attribuées.', icon: ClipboardList },
+      { to: '/planning', label: 'Mon planning', desc: 'Voir les dates et horaires des interventions.', icon: CalendarDays },
+      { to: '/payments', label: 'Mes revenus', desc: 'Suivre les montants gagnés et les paiements reçus.', icon: Wallet },
       ...common,
+      { href: '/#contact', label: 'Aide et assistance', desc: 'Contacter l\'équipe Nafissa.', icon: LifeBuoy },
     ];
   })();
+
+  const [savingAvailability, setSavingAvailability] = useState(false);
+  const toggleAvailability = async () => {
+    if (savingAvailability) return;
+    setSavingAvailability(true);
+    try {
+      await authAPI.updateProfile({ is_available: !user.is_available });
+      await loadUser();
+    } catch {
+      // Erreur réseau : l'état affiché reste inchangé, nouvelle tentative possible.
+    } finally {
+      setSavingAvailability(false);
+    }
+  };
 
   const isActive = (to) => {
     const [path, query] = to.split('?');
@@ -118,12 +139,14 @@ export default function Layout({ children }) {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Menu</p>
-        {navLinks.map(({ to, label, desc, icon: Icon, badge }) => {
-          const active = isActive(to);
+        {navLinks.map(({ to, href, label, desc, icon: Icon, badge }) => {
+          const active = to ? isActive(to) : false;
+          const Tag = href ? 'a' : Link;
+          const linkProps = href ? { href } : { to };
           return (
-            <Link
-              key={to}
-              to={to}
+            <Tag
+              key={to ?? href}
+              {...linkProps}
               onClick={closeMobile}
               className={`group relative flex items-start gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
                 active
@@ -148,10 +171,45 @@ export default function Layout({ children }) {
                   {badge > 9 ? '9+' : badge}
                 </span>
               )}
-            </Link>
+            </Tag>
           );
         })}
       </nav>
+
+      {/* Disponibilité prestataire : l'équipe ne propose des missions
+          qu'aux profils disponibles. */}
+      {isPrestataire && (
+        <div className="px-3 pb-3">
+          <div className="rounded-xl border border-gray-200 bg-gray-50/70 px-3.5 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-bold text-gray-900">Disponibilité</p>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={Boolean(user?.is_available)}
+                aria-label="Recevoir des propositions"
+                disabled={savingAvailability}
+                onClick={toggleAvailability}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+                  user?.is_available ? 'bg-emerald-500' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+                    user?.is_available ? 'left-[1.375rem]' : 'left-0.5'
+                  }`}
+                />
+              </button>
+            </div>
+            <p className={`mt-1 text-xs font-semibold ${user?.is_available ? 'text-emerald-600' : 'text-gray-500'}`}>
+              {savingAvailability ? 'Enregistrement…' : user?.is_available ? 'Disponible' : 'Indisponible'}
+            </p>
+            <p className="mt-1 text-[11px] leading-snug text-gray-400">
+              Active ta disponibilité pour permettre à l&apos;équipe de te proposer des missions.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* External link */}
       <div className="px-3 pb-2">

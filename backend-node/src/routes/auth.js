@@ -434,6 +434,11 @@ export default async function authRoutes(fastify) {
       phone: z.string().max(20).optional().nullable(),
       address: z.string().max(255).optional().nullable(),
       bio: z.string().max(1000).optional().nullable(),
+      // En multipart les champs arrivent en chaînes : 'true'/'false' → booléen.
+      is_available: z.preprocess(
+        (v) => (v === 'true' ? true : v === 'false' ? false : v),
+        z.boolean(),
+      ).optional(),
     });
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
@@ -466,6 +471,7 @@ export default async function authRoutes(fastify) {
       userData.lat = coords?.lat ?? null;
       userData.lng = coords?.lng ?? null;
     }
+    if (d.is_available !== undefined) userData.isAvailable = d.is_available;
     if (photoFile) {
       userData.photo = await savePart(photoFile, 'photos');
     }

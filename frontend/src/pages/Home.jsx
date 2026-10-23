@@ -4,71 +4,62 @@ import { useAuth } from '../contexts/AuthContext';
 import BrandMark from '../components/BrandMark';
 import InstallPwa from '../components/InstallPwa';
 import {
-  ArrowRight, Star, Shield, Clock, CreditCard,
-  Sparkles, Baby, Home as HomeIcon, BookOpen, ChefHat, Zap,
-  Heart, Phone, MapPin, Mail, ChevronRight, Play, MapPinned, Cpu, LayoutDashboard,
-  Shirt, ShoppingCart, Droplets, Hammer, Menu, X
+  ArrowRight, Shield,
+  Phone, MapPin, Mail, ChevronRight, Menu, X
 } from 'lucide-react';
 import { homepageCategoryVisual } from '../lib/categoryImages';
 // Hero image depuis le dossier public/
 
 // Services prioritaires NAFISSA
 const PRIORITY_SERVICES = [
-  { icon: HomeIcon, slug: 'home', name: 'Ménage', desc: 'Nettoyage professionnel du domicile' },
-  { icon: Shirt, slug: 'laundry', name: 'Lavage & Repassage', desc: 'Linge lavé, séché et repassé' },
-  { icon: ShoppingCart, slug: 'shopping', name: 'Course', desc: 'Vos achats du quotidien livrés' },
-  { icon: Baby, slug: 'baby', name: 'Garde d\'enfant', desc: 'Nounous de confiance' },
-  { icon: ChefHat, slug: 'utensils', name: 'Cuisine', desc: 'Repas faits maison' },
+  { slug: 'home', name: 'Ménage', desc: 'Nettoyage professionnel du domicile' },
+  { slug: 'laundry', name: 'Lavage & Repassage', desc: 'Linge lavé, séché et repassé' },
+  { slug: 'shopping', name: 'Course', desc: 'Vos achats du quotidien livrés' },
+  { slug: 'baby', name: 'Garde d\'enfant', desc: 'Nounous de confiance' },
+  { slug: 'utensils', name: 'Cuisine', desc: 'Repas faits maison' },
 ];
 
 // Services secondaires NAFISSA
 const SECONDARY_SERVICES = [
-  { icon: BookOpen, slug: 'book-open', name: 'Soutien scolaire', desc: 'Cours particuliers à domicile' },
-  { icon: Zap, slug: 'zap', name: 'Électricien', desc: 'Installation & dépannage' },
-  { icon: Droplets, slug: 'plumber', name: 'Plombier', desc: 'Fuites, sanitaires, robinetterie' },
-  { icon: Hammer, slug: 'carpenter', name: 'Menuisier', desc: 'Bois, meubles & réparations' },
+  { slug: 'book-open', name: 'Soutien scolaire', desc: 'Cours particuliers à domicile' },
+  { slug: 'zap', name: 'Électricien', desc: 'Installation & dépannage' },
+  { slug: 'plumber', name: 'Plombier', desc: 'Fuites, sanitaires, robinetterie' },
+  { slug: 'carpenter', name: 'Menuisier', desc: 'Bois, meubles & réparations' },
 ];
 
 const WORKFLOW_STEPS = [
-  { num: '1', title: 'Le client crée une demande', desc: 'Vous décrivez le besoin, la date, l\'heure et le lieu — notre équipe s\'occupe du reste.', icon: Sparkles },
-  { num: '2', title: 'Détection automatique', desc: 'La plateforme relie localisation et catégorie de service pour cadrer la mission.', icon: MapPinned },
-  { num: '3', title: 'Calcul intelligent', desc: 'Le moteur met en avant les prestataires proches, disponibles et mieux notés.', icon: Cpu },
-  { num: '4', title: 'Tableau administrateur', desc: 'L’admin consulte une short-list des meilleurs candidats pour la mission.', icon: LayoutDashboard },
-  { num: '5', title: 'Validation & attribution', desc: 'Une personne dédiée valide et attribue le prestataire — comme sur votre parcours historique Laravel.', icon: Shield },
+  { num: '1', title: 'Vous décrivez votre besoin', desc: 'Type de service, date, heure, lieu et détails : le formulaire prend tout.' },
+  { num: '2', title: 'Notre équipe étudie la demande', desc: 'L\'administration NAFISSA vérifie votre besoin et votre zone d\'intervention.' },
+  { num: '3', title: 'Attribution du bon prestataire', desc: 'Nous choisissons pour vous un prestataire vérifié, proche et disponible.' },
+  { num: '4', title: 'Confirmation de la mission', desc: 'Le prestataire accepte la mission : vous êtes informée immédiatement.' },
+  { num: '5', title: 'Paiement sécurisé', desc: 'Vous payez après acceptation ; le montant n\'est libéré qu\'une fois la mission confirmée.' },
 ];
 
-function renderServiceCard({ icon: Icon, name, desc, slug }) {
-  const { image, gradient, emoji } = homepageCategoryVisual(slug);
+function renderServiceCard({ name, desc, slug }) {
+  const { image, gradient } = homepageCategoryVisual(slug);
   return (
     <Link
       to="/demande"
       key={name}
       className="group flex flex-col overflow-hidden rounded-[1.4rem] border border-gray-200/90 bg-white shadow-md ring-1 ring-black/[0.04] hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
       <div className={`relative h-36 w-full shrink-0 overflow-hidden bg-gradient-to-br ${gradient} sm:h-44`}>
-        {image ? (
+        {image && (
           <img
             src={image}
             alt={name}
             loading="lazy"
             className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
           />
-        ) : (
-          <span className="absolute inset-0 flex items-center justify-center text-5xl opacity-90 transition-transform duration-700 ease-out group-hover:scale-110">
-            {emoji}
-          </span>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 flex items-center gap-2.5 px-4 pb-3.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-md ring-1 ring-black/5">
-            <Icon size={18} className="text-primary" aria-hidden />
-          </span>
+        <div className="absolute inset-x-0 bottom-0 px-4 pb-3.5">
           <p className="text-base font-bold text-white drop-shadow">{name}</p>
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-2 p-4">
         <p className="text-sm text-gray-500 line-clamp-2">{desc}</p>
         <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t border-gray-50">
-          <span className="text-xs font-bold text-primary">Voir les offres</span>
+          <span className="text-xs font-bold text-primary">Faire une demande</span>
           <ArrowRight size={18} className="text-gray-400 group-hover:text-secondary group-hover:translate-x-0.5 transition-all" aria-hidden />
         </div>
       </div>
@@ -176,7 +167,7 @@ export default function Home() {
               </h1>
 
               <p className="mt-7 text-lg sm:text-xl text-gray-500 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                Ménage, garde d&apos;enfants, cuisine, lavage… Trouvez des prestataires <strong className="text-gray-700">vérifiés et notés</strong> pour tous vos besoins, en toute confiance.
+                Ménage, garde d&apos;enfants, cuisine, lavage… Décrivez votre besoin : <strong className="text-gray-700">notre équipe vous attribue un prestataire vérifié</strong>, proche et disponible.
               </p>
 
               {/* CTA Buttons */}
@@ -185,7 +176,7 @@ export default function Home() {
                   Faire une demande <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link to="/register" className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-secondary/10 hover:bg-secondary/15 text-secondary px-8 py-4 rounded-2xl text-base font-bold transition-all border border-secondary/20 hover:border-secondary/40">
-                  <Play size={16} fill="currentColor" /> Devenir prestataire
+                  Devenir prestataire
                 </Link>
               </div>
 
@@ -224,11 +215,11 @@ export default function Home() {
       <section className="border-y border-gray-100 bg-gray-50/50 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-3 text-sm font-medium text-gray-400">
-            <span className="flex items-center gap-2"><Shield size={16} className="text-secondary" /> Prestataires vérifiés</span>
-            <span className="flex items-center gap-2"><CreditCard size={16} className="text-primary" /> Paiement sécurisé</span>
-            <span className="flex items-center gap-2"><Clock size={16} className="text-accent" /> Réponse en 24h</span>
-            <span className="flex items-center gap-2"><Star size={16} className="text-amber-500 fill-amber-500" /> Avis clients vérifiés</span>
-            <span className="flex items-center gap-2"><Heart size={16} className="text-rose-500" /> Service garanti</span>
+            <span>Prestataires vérifiés</span>
+            <span>Paiement sécurisé</span>
+            <span>Réponse en 24h</span>
+            <span>Avis clients vérifiés</span>
+            <span>Service garanti</span>
           </div>
         </div>
       </section>
@@ -251,7 +242,7 @@ export default function Home() {
           {/* Services prioritaires */}
           <div className="mb-6 flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-primary">
-              <Star size={13} className="fill-primary" /> Services prioritaires
+              Services prioritaires
             </span>
             <span className="h-px flex-1 bg-gradient-to-r from-primary/20 to-transparent" />
           </div>
@@ -262,7 +253,7 @@ export default function Home() {
           {/* Services secondaires */}
           <div className="mt-16 mb-6 flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-secondary-dark">
-              <Sparkles size={13} /> Services secondaires
+              Services secondaires
             </span>
             <span className="h-px flex-1 bg-gradient-to-r from-secondary/30 to-transparent" />
           </div>
@@ -278,17 +269,17 @@ export default function Home() {
       <section id="how" className="py-20 sm:py-28 bg-gradient-to-b from-gray-50/80 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <span className="inline-block text-primary font-bold text-sm uppercase tracking-wider mb-3">Architecture recommandée</span>
+            <span className="inline-block text-primary font-bold text-sm uppercase tracking-wider mb-3">Comment ça marche</span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900">
-              Workflow <span className="text-secondary">en 5 étapes</span>
+              De la demande à <span className="text-secondary">l&apos;intervention</span>
             </h2>
             <p className="mt-4 text-gray-500 text-lg max-w-2xl mx-auto">
-              Ce parcours s’applique à l’ensemble de la plateforme — y compris l’exploration gratuite des offres : la création du compte ne change pas le fonctionnement après connexion.
+              Vous décrivez votre besoin, notre équipe attribue le prestataire adapté — chaque étape est suivie jusqu&apos;à la fin de la mission.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5">
-            {WORKFLOW_STEPS.map(({ num, title, desc, icon: StepIcon }, i) => (
+            {WORKFLOW_STEPS.map(({ num, title, desc }, i) => (
               <div key={num} className="relative group">
                 {i < WORKFLOW_STEPS.length - 1 && (
                   <div className="hidden xl:block absolute top-11 left-[calc(100%+2px)] w-[calc(100%-20px)] h-0.5 z-0">
@@ -296,15 +287,10 @@ export default function Home() {
                   </div>
                 )}
                 <div className="relative z-[1] bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl hover:border-primary/20 transition-all duration-300 h-full flex flex-col">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="relative">
-                      <div className="w-11 h-11 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                        <StepIcon size={20} className="text-white" />
-                      </div>
-                      <span className="absolute -top-1 -right-1 min-w-[1.375rem] h-6 px-1 bg-accent text-white text-[11px] font-extrabold rounded-full flex items-center justify-center shadow-md">
-                        {num}
-                      </span>
-                    </div>
+                  <div className="mb-4">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-extrabold text-white shadow-lg shadow-primary/20">
+                      {num}
+                    </span>
                   </div>
                   <h3 className="text-[15px] font-bold text-gray-900 mb-2 group-hover:text-primary transition-colors leading-snug">{title}</h3>
                   <p className="text-sm text-gray-500 leading-relaxed flex-1">{desc}</p>
@@ -331,31 +317,19 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                icon: Shield,
                 title: 'Prestataires vérifiés',
-                desc: 'Chaque prestataire fournit sa pièce d\'identité et est validé par notre équipe avant de pouvoir proposer ses services.',
-                color: 'from-secondary to-secondary-dark',
-                shadow: 'shadow-secondary/20',
+                desc: 'Chaque prestataire fournit sa pièce d\'identité et est validé par notre équipe avant de pouvoir recevoir des missions.',
               },
               {
-                icon: CreditCard,
                 title: 'Paiement sécurisé',
                 desc: 'Votre paiement est retenu en sécurité et n\'est libéré au prestataire qu\'après votre confirmation de satisfaction.',
-                color: 'from-primary to-primary-dark',
-                shadow: 'shadow-primary/20',
               },
               {
-                icon: Clock,
                 title: 'Suivi en temps réel',
                 desc: 'Suivez l\'avancement de votre demande étape par étape, de l\'attribution du prestataire à la fin de la mission.',
-                color: 'from-accent to-amber-600',
-                shadow: 'shadow-accent/20',
               },
-            ].map(({ icon: Icon, title, desc, color, shadow }) => (
+            ].map(({ title, desc }) => (
               <div key={title} className="group bg-white border border-gray-100 rounded-2xl p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
-                <div className={`w-16 h-16 bg-gradient-to-br ${color} rounded-2xl flex items-center justify-center mb-6 shadow-xl ${shadow} group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                  <Icon size={28} className="text-white" />
-                </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary transition-colors">{title}</h3>
                 <p className="text-gray-500 leading-relaxed">{desc}</p>
               </div>
@@ -379,7 +353,7 @@ export default function Home() {
 
             <div className="relative px-8 py-16 sm:px-16 sm:py-20 text-center">
               <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-full text-white/90 text-sm font-medium mb-6">
-                <Sparkles size={14} /> Rejoignez la communauté
+                Rejoignez la communauté
               </div>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-5 leading-tight">
                 Prêt(e) à simplifier<br className="hidden sm:block" /> votre quotidien ?

@@ -20,6 +20,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const ServiceEdit = lazy(() => import('./pages/ServiceEdit'));
 const Tracking = lazy(() => import('./pages/Tracking'));
 const Demande = lazy(() => import('./pages/Demande'));
+const Planning = lazy(() => import('./pages/Planning'));
 
 const pageFallback = (
   <div className="min-h-[40vh] flex items-center justify-center text-muted text-sm">
@@ -51,6 +52,9 @@ function AppRoutes() {
         } />
         <Route path="/services/:id/edit" element={
           <ProtectedRoute providerOnly><Layout><ServiceEdit /></Layout></ProtectedRoute>
+        } />
+        <Route path="/planning" element={
+          <ProtectedRoute providerOnly><Layout><Planning /></Layout></ProtectedRoute>
         } />
         <Route path="/bookings" element={
           <ProtectedRoute><Layout><Bookings /></Layout></ProtectedRoute>

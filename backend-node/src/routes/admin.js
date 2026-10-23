@@ -111,6 +111,7 @@ export default async function adminRoutes(fastify) {
       where: {
         role: { in: ['etudiant', 'artisan'] },
         verified: true,
+        isAvailable: true,
         profile: { status: 'active' },
         services: { some: { categoryId: catId, available: true } },
       },
@@ -286,6 +287,9 @@ export default async function adminRoutes(fastify) {
     }
     if (!provider.verified || provider.profile?.status !== 'active') {
       return reply.code(422).send({ message: 'Ce prestataire n\'est pas valide.' });
+    }
+    if (!provider.isAvailable) {
+      return reply.code(422).send({ message: 'Ce prestataire a désactivé sa disponibilité.' });
     }
 
     // Demande « par catégorie » (sans annonce choisie) : on rattache la
