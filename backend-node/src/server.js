@@ -55,8 +55,15 @@ export async function buildApp() {
   // limitées (création de demande, auth, suivi public).
   await fastify.register(rateLimit, { global: false });
 
+  // Le dossier d'upload est créé s'il manque (déploiement frais) : les
+  // fichiers doivent rester servis sans intervention manuelle.
   const storageRoot =
     process.env.STORAGE_PATH || path.join(__dirname, '..', '..', 'backend', 'storage', 'app', 'public');
+  try {
+    fs.mkdirSync(storageRoot, { recursive: true });
+  } catch (err) {
+    fastify.log.warn(`Impossible de créer le dossier storage (${storageRoot}): ${err.message}`);
+  }
   if (fs.existsSync(storageRoot)) {
     await fastify.register(fastifyStatic, {
       root: storageRoot,
