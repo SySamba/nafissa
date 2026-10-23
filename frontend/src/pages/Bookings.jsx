@@ -90,7 +90,7 @@ export default function Bookings() {
                         <Calendar size={14} /> {new Date(booking.booking_date).toLocaleDateString('fr-FR')}
                       </span>
                       <span className="flex items-center gap-1">
-                        <Clock size={14} /> {booking.booking_time}
+                        <Clock size={14} /> {booking.booking_time}{booking.duration ? ` · ${booking.duration}` : ''}
                       </span>
                     </div>
                     <p className="text-sm text-muted mt-1">

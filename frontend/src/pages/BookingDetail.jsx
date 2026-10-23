@@ -272,7 +272,7 @@ export default function BookingDetail() {
             </div>
             <div className="flex items-center gap-2 text-sm">
               <Clock size={16} className="text-muted" />
-              <span>{booking.booking_time}</span>
+              <span>{booking.booking_time}{booking.duration ? ` · ${booking.duration}` : ''}</span>
             </div>
           </div>
 

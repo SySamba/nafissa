@@ -27,6 +27,7 @@ export default function ServiceDetail() {
   const [bookingForm, setBookingForm] = useState({
     booking_date: '',
     booking_time: '',
+    duration: '',
     notes: '',
     location: '',
     description: '',
@@ -372,6 +373,24 @@ export default function ServiceDetail() {
                       />
                     </div>
                   </div>
+                </div>
+                <div>
+                  <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-1">Durée estimée</label>
+                  <select
+                    id="duration"
+                    required
+                    value={bookingForm.duration}
+                    onChange={(e) => setBookingForm((p) => ({ ...p, duration: e.target.value }))}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                    <option value="">Combien de temps environ…</option>
+                    <option value="1 heure">1 heure</option>
+                    <option value="2 heures">2 heures</option>
+                    <option value="3 heures">3 heures</option>
+                    <option value="Demi-journée (4 h)">Demi-journée (4 h)</option>
+                    <option value="Journée complète (8 h)">Journée complète (8 h)</option>
+                    <option value="Plusieurs jours">Plusieurs jours</option>
+                    <option value="À définir avec l'équipe">À définir avec l'équipe</option>
+                  </select>
                 </div>
                 <div>
                   <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">Localisation (adresse d&apos;intervention)</label>

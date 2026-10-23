@@ -30,6 +30,7 @@ export default async function trackingRoutes(fastify) {
         categorie: booking.service?.category?.name ?? booking.category?.name ?? null,
         date: booking.bookingDate.toISOString().slice(0, 10),
         heure: booking.bookingTime.toISOString().slice(11, 16),
+        duree: booking.duration ?? null,
         lieu: booking.location,
         montant: booking.totalPrice,
         creee_le: booking.createdAt,

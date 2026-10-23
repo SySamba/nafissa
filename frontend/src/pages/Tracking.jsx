@@ -90,7 +90,7 @@ export default function Tracking() {
 
           <div className="mt-5 grid grid-cols-2 gap-3 text-sm text-gray-600">
             <span className="flex items-center gap-2"><Calendar size={15} className="text-primary" />{new Date(demande.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-            <span className="flex items-center gap-2"><Clock size={15} className="text-primary" />{demande.heure}</span>
+            <span className="flex items-center gap-2"><Clock size={15} className="text-primary" />{demande.heure}{demande.duree ? ` · ${demande.duree}` : ''}</span>
             {demande.lieu && <span className="flex items-center gap-2"><MapPin size={15} className="text-primary" />{demande.lieu}</span>}
             {demande.montant != null && <span className="flex items-center gap-2"><CreditCard size={15} className="text-primary" />{Number(demande.montant).toLocaleString('fr-FR')} FCFA</span>}
           </div>

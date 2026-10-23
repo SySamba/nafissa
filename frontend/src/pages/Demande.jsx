@@ -13,6 +13,7 @@ export default function Demande() {
     category_id: '',
     booking_date: '',
     booking_time: '',
+    duration: '',
     location: '',
     description: '',
     guest_name: '',
@@ -37,6 +38,7 @@ export default function Demande() {
         category_id: form.category_id,
         booking_date: form.booking_date,
         booking_time: form.booking_time,
+        duration: form.duration || null,
         location: form.location || null,
         description: form.description || null,
         guest_name: user ? undefined : form.guest_name,
@@ -154,6 +156,23 @@ export default function Demande() {
                   />
                 </div>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="duration" className="block text-sm font-semibold text-gray-800 mb-1.5">Durée estimée *</label>
+              <select
+                id="duration" required
+                value={form.duration} onChange={set('duration')}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                <option value="">Combien de temps environ…</option>
+                <option value="1 heure">1 heure</option>
+                <option value="2 heures">2 heures</option>
+                <option value="3 heures">3 heures</option>
+                <option value="Demi-journée (4 h)">Demi-journée (4 h)</option>
+                <option value="Journée complète (8 h)">Journée complète (8 h)</option>
+                <option value="Plusieurs jours">Plusieurs jours</option>
+                <option value="À définir avec l'équipe">À définir avec l'équipe</option>
+              </select>
             </div>
 
             <div>

@@ -159,6 +159,8 @@ model Booking {
   status       BookingStatus @default(en_attente_admin)
   bookingDate  DateTime      @map("booking_date") @db.Date
   bookingTime  DateTime      @map("booking_time") @db.Time(0)
+  /// Durée estimée de la prestation (ex. « 2 heures », « Journée complète »).
+  duration     String?       @db.VarChar(80)
   /// Prix figé à l'attribution (offre du prestataire choisi) ; nul tant
   /// que la demande n'est rattachée à aucune annonce.
   totalPrice   Decimal?      @map("total_price") @db.Decimal(10, 2)

@@ -205,7 +205,7 @@ export default function Admin() {
                           <p className="text-sm text-gray-500 mt-0.5">{booking.service?.category?.name ?? booking.category?.name}</p>
                           <div className="flex flex-wrap items-center gap-3 mt-2.5 text-sm text-gray-500">
                             <span className="flex items-center gap-1"><Calendar size={14} /> {new Date(booking.booking_date).toLocaleDateString('fr-FR')}</span>
-                            <span>{booking.booking_time}</span>
+                            <span>{booking.booking_time}{booking.duration ? ` · ${booking.duration}` : ''}</span>
                             {booking.location && <span className="flex items-center gap-1"><MapPin size={14} /> {booking.location}</span>}
                           </div>
                           {booking.description && (
