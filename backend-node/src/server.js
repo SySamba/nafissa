@@ -7,6 +7,7 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import fastifyStatic from '@fastify/static';
 import multipart from '@fastify/multipart';
+import rateLimit from '@fastify/rate-limit';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import { prismaPayloadToApiJson } from './lib/api-json.js';
@@ -49,6 +50,10 @@ export async function buildApp() {
       files: 3,
     },
   });
+
+  // Anti-abus : seules les routes qui déclarent config.rateLimit sont
+  // limitées (création de demande, auth, suivi public).
+  await fastify.register(rateLimit, { global: false });
 
   const storageRoot =
     process.env.STORAGE_PATH || path.join(__dirname, '..', '..', 'backend', 'storage', 'app', 'public');

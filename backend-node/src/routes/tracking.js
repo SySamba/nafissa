@@ -6,7 +6,9 @@ import { prisma } from '../lib/prisma.js';
  * coordonnées, pas de pièces jointes).
  */
 export default async function trackingRoutes(fastify) {
-  fastify.get('/suivi/:token', async (request, reply) => {
+  fastify.get('/suivi/:token', {
+    config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
     const token = String(request.params.token || '');
     if (!/^[a-f0-9]{32}$/.test(token)) {
       return reply.code(404).send({ message: 'Demande introuvable.' });

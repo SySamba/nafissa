@@ -99,7 +99,10 @@ async function findOrCreateGuestClient(name, phone, location) {
 
 export default async function bookingRoutes(fastify) {
   // Demande rapide : ouverte aux invités (nom + téléphone) comme aux clientes connectées.
-  fastify.post('/bookings', { preHandler: optionalAuthMiddleware }, async (request, reply) => {
+  fastify.post('/bookings', {
+    preHandler: optionalAuthMiddleware,
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
     const schema = z.object({
       service_id: z.coerce.bigint().optional().nullable(),
       category_id: z.coerce.bigint().optional().nullable(),

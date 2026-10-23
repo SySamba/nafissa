@@ -102,13 +102,46 @@ const registerJsonSchema = z.object({
   category_ids: categoryIdsSchema,
 });
 
+/** Détecte le vrai type d'un fichier par ses octets de signature. */
+function sniffMime(buf) {
+  if (!buf || buf.length < 4) return null;
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return 'image/jpeg';
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return 'image/png';
+  if (
+    buf.length >= 12 &&
+    buf.subarray(0, 4).toString('latin1') === 'RIFF' &&
+    buf.subarray(8, 12).toString('latin1') === 'WEBP'
+  ) return 'image/webp';
+  if (buf.subarray(0, 4).toString('latin1') === '%PDF') return 'application/pdf';
+  return null;
+}
+
+const MIME_EXT = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'application/pdf': '.pdf',
+};
+
 async function savePart(part, subdir) {
   if (!part || !part.buffer) return null;
+  // Ni le nom de fichier ni le mimetype déclaré ne sont fiables : on n'accepte
+  // que des contenus réellement image (ou PDF pour les pièces d'identité) et
+  // l'extension stockée est dérivée du type détecté.
+  const mime = sniffMime(part.buffer);
+  const allowed = part.fieldname === 'photo'
+    ? mime && mime !== 'application/pdf'
+    : !!mime;
+  if (!mime || !allowed) {
+    throw Object.assign(
+      new Error('Format de fichier non pris en charge (JPG, PNG, WebP ou PDF uniquement).'),
+      { statusCode: 422 },
+    );
+  }
   const root =
     process.env.STORAGE_PATH ||
     path.join(process.cwd(), '..', 'backend', 'storage', 'app', 'public');
-  const ext = path.extname(part.filename || '') || '.bin';
-  const name = randomBytes(16).toString('hex') + ext;
+  const name = randomBytes(16).toString('hex') + MIME_EXT[mime];
   const dir = path.join(root, subdir);
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, name), part.buffer);
@@ -116,7 +149,9 @@ async function savePart(part, subdir) {
 }
 
 export default async function authRoutes(fastify) {
-  fastify.post('/auth/register', async (request, reply) => {
+  fastify.post('/auth/register', {
+    config: { rateLimit: { max: 15, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
     const isMultipart = request.isMultipart();
     let body = {};
     const files = { photo: null, id_card_recto: null, id_card_verso: null };
@@ -129,7 +164,7 @@ export default async function authRoutes(fastify) {
           // et la requête tourne indéfiniment.
           const buffer = await part.toBuffer();
           if (['photo', 'id_card_recto', 'id_card_verso'].includes(part.fieldname)) {
-            files[part.fieldname] = { buffer, filename: part.filename };
+            files[part.fieldname] = { buffer, filename: part.filename, fieldname: part.fieldname };
           }
         } else {
           body[part.fieldname] = part.value;
@@ -304,7 +339,9 @@ export default async function authRoutes(fastify) {
     });
   });
 
-  fastify.post('/auth/login', async (request, reply) => {
+  fastify.post('/auth/login', {
+    config: { rateLimit: { max: 15, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
     const schema = z
       .object({
         login: z.string().min(3).optional(),
