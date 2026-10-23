@@ -126,8 +126,10 @@ export default function Layout({ children }) {
         {user ? (
           <>
             <div className="flex items-center gap-3 rounded-xl bg-gray-50/80 px-3 py-2.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark text-sm font-bold text-white">
-                {user.name.charAt(0).toUpperCase()}
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary to-primary-dark text-sm font-bold text-white">
+                {user.photo
+                  ? <img src={`/storage/${user.photo}`} alt="" className="h-full w-full object-cover" />
+                  : user.name.charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-gray-900">{user.name}</p>

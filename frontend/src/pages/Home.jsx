@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import BrandMark from '../components/BrandMark';
 import InstallPwa from '../components/InstallPwa';
 import {
-  ArrowRight, Star, Shield, Clock, CreditCard, Users, CheckCircle,
+  ArrowRight, Star, Shield, Clock, CreditCard,
   Sparkles, Baby, Home as HomeIcon, BookOpen, ChefHat, Zap,
   Heart, Phone, MapPin, Mail, ChevronRight, Play, MapPinned, Cpu, LayoutDashboard,
   Shirt, ShoppingCart, Droplets, Hammer, Menu, X
@@ -195,23 +195,6 @@ export default function Home() {
                 </Link>
               </div>
 
-              {/* Stats bar */}
-              <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-4 bg-white/70 backdrop-blur-sm border border-gray-100 rounded-2xl px-6 py-5 shadow-xl shadow-gray-200/50 max-w-xl mx-auto lg:mx-0">
-                {[
-                  { value: '500+', label: 'Familles', icon: Heart, color: 'text-rose-500' },
-                  { value: '200+', label: 'Prestataires', icon: Users, color: 'text-primary' },
-                  { value: '1 000+', label: 'Missions', icon: CheckCircle, color: 'text-secondary' },
-                  { value: '4.8/5', label: 'Satisfaction', icon: Star, color: 'text-amber-500' },
-                ].map(({ value, label, icon: Icon, color }) => (
-                  <div key={label} className="flex items-center gap-3">
-                    <div className={`${color}`}><Icon size={20} /></div>
-                    <div className="text-left">
-                      <p className="text-lg font-extrabold text-gray-900 leading-tight">{value}</p>
-                      <p className="text-xs text-gray-400 font-medium">{label}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* Colonne visuel (illustration locale → fiable) */}

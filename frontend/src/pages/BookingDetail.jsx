@@ -325,8 +325,10 @@ export default function BookingDetail() {
               <p className="text-xs text-muted font-medium mb-2">Prestataire</p>
               {booking.provider ? (
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-secondary/10 text-secondary rounded-full flex items-center justify-center text-sm font-bold">
-                    {booking.provider.name?.charAt(0)}
+                  <div className="w-8 h-8 overflow-hidden bg-secondary/10 text-secondary rounded-full flex items-center justify-center text-sm font-bold">
+                    {booking.provider.photo
+                      ? <img src={`/storage/${booking.provider.photo}`} alt="" className="w-full h-full object-cover" />
+                      : booking.provider.name?.charAt(0)}
                   </div>
                   <span className="text-sm font-medium">{booking.provider.name}</span>
                 </div>

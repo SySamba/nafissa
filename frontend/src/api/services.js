@@ -7,7 +7,9 @@ export const authAPI = {
   login: (data) => apiClient.post('/auth/login', data),
   logout: () => apiClient.post('/auth/logout'),
   me: () => apiClient.get('/auth/me'),
-  updateProfile: (data) => apiClient.put('/auth/profile', data),
+  updateProfile: (data) => apiClient.put('/auth/profile', data, {
+    headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
+  }),
 };
 
 export const serviceAPI = {

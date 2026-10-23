@@ -411,13 +411,31 @@ export default async function authRoutes(fastify) {
   });
 
   fastify.put('/auth/profile', { preHandler: authMiddleware }, async (request, reply) => {
+    // JSON ou multipart (quand une photo de profil est jointe).
+    let body = {};
+    let photoFile = null;
+    if (request.isMultipart()) {
+      for await (const part of request.parts()) {
+        if (part.type === 'file') {
+          const buffer = await part.toBuffer();
+          if (part.fieldname === 'photo') {
+            photoFile = { buffer, fieldname: 'photo' };
+          }
+        } else {
+          body[part.fieldname] = part.value;
+        }
+      }
+    } else {
+      body = request.body || {};
+    }
+
     const schema = z.object({
       name: z.string().max(100).optional(),
       phone: z.string().max(20).optional().nullable(),
       address: z.string().max(255).optional().nullable(),
       bio: z.string().max(1000).optional().nullable(),
     });
-    const parsed = schema.safeParse(request.body || {});
+    const parsed = schema.safeParse(body);
     if (!parsed.success) {
       return reply.code(422).send({ message: 'Données invalides.' });
     }
@@ -447,6 +465,9 @@ export default async function authRoutes(fastify) {
       const coords = await geocodeAddress(d.address);
       userData.lat = coords?.lat ?? null;
       userData.lng = coords?.lng ?? null;
+    }
+    if (photoFile) {
+      userData.photo = await savePart(photoFile, 'photos');
     }
 
     await prisma.$transaction(async (tx) => {

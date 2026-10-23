@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../api/services';
-import { User, Mail, Phone, MapPin, FileText, Check, ArrowLeft, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { User, Mail, Phone, MapPin, FileText, Check, ArrowLeft, Lock, Eye, EyeOff, ShieldCheck, Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ROLE_LABELS = {
@@ -22,6 +22,9 @@ export default function Profile() {
   });
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const photoInput = useRef(null);
 
   const [pwdForm, setPwdForm] = useState({
     current_password: '',
@@ -42,7 +45,10 @@ export default function Profile() {
     setLoading(true);
     setMessage({ type: '', text: '' });
     try {
-      await authAPI.updateProfile(form);
+      const payload = photoFile
+        ? (() => { const fd = new FormData(); Object.entries(form).forEach(([k, v]) => fd.append(k, v ?? '')); fd.append('photo', photoFile); return fd; })()
+        : form;
+      await authAPI.updateProfile(payload);
       await loadUser();
       setMessage({ type: 'success', text: 'Profil mis à jour avec succès.' });
     } catch (err) {
@@ -103,15 +109,38 @@ export default function Profile() {
         {/* En-tête profil */}
         <div className="bg-gradient-to-r from-primary to-primary-light p-6 text-white">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl font-bold">
-              {user?.name?.charAt(0)}
-            </div>
+            <button
+              type="button"
+              onClick={() => photoInput.current?.click()}
+              className="relative group w-16 h-16 shrink-0 rounded-full overflow-hidden bg-white/20 flex items-center justify-center text-2xl font-bold"
+              title="Changer la photo">
+              {photoPreview || user?.photo ? (
+                <img src={photoPreview || `/storage/${user.photo}`} alt="Photo de profil" className="w-full h-full object-cover" />
+              ) : (
+                user?.name?.charAt(0)
+              )}
+              <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera size={20} />
+              </span>
+            </button>
+            <input
+              ref={photoInput}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                setPhotoFile(f || null);
+                setPhotoPreview(f ? URL.createObjectURL(f) : null);
+              }}
+            />
             <div>
               <h1 className="text-xl font-bold">{user?.name}</h1>
               <p className="text-white/80 text-sm">{user?.email}</p>
               <span className="inline-block mt-1 bg-white/20 text-white text-xs px-3 py-0.5 rounded-full font-medium">
                 {ROLE_LABELS[user?.role]}
               </span>
+              <p className="mt-1.5 text-white/70 text-xs">Cliquez sur la photo pour la changer</p>
             </div>
           </div>
         </div>

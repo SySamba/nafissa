@@ -71,7 +71,12 @@ export default function ServiceCreate() {
       </button>
 
       <div className="bg-surface rounded-2xl border border-gray-100 p-6 sm:p-8">
-        <h1 className="text-xl font-bold text-gray-900 mb-6">Nouveau service</h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Nouveau service</h1>
+        <p className="mb-6 flex items-start gap-2 rounded-xl bg-primary/5 border border-primary/10 px-4 py-3 text-sm text-gray-700">
+          Votre annonce rejoint le vivier : les clientes décrivent leur besoin et
+          notre équipe vous attribue les demandes correspondantes. Décrivez ce que
+          vous faites le mieux — pas besoin de viser tous les cas.
+        </p>
 
         {errors.general && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 text-danger text-sm rounded-lg">{errors.general[0]}</div>
@@ -79,7 +84,7 @@ export default function ServiceCreate() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-1.5">Catégorie</label>
+            <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-1.5">Catégorie *</label>
             <select id="category_id" name="category_id" required value={form.category_id} onChange={handleChange}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
               <option value="">Sélectionner une catégorie</option>
@@ -89,35 +94,37 @@ export default function ServiceCreate() {
           </div>
 
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1.5">Titre du service</label>
-            <input id="title" name="title" type="text" required value={form.title} onChange={handleChange}
-              placeholder="Ex: Soutien scolaire en mathématiques"
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1.5">Titre du service *</label>
+            <input id="title" name="title" type="text" required maxLength={200} value={form.title} onChange={handleChange}
+              placeholder="Ex: Ménage complet appartement, Repassage à domicile"
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
             {errors.title && <p className="text-xs text-danger mt-1">{errors.title[0]}</p>}
           </div>
 
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
-            <textarea id="description" name="description" rows={4} value={form.description} onChange={handleChange}
-              placeholder="Décrivez votre service en détail..."
+            <textarea id="description" name="description" rows={4} maxLength={2000} value={form.description} onChange={handleChange}
+              placeholder="Détaillez ce que comprend votre prestation, votre expérience, le matériel fourni ou non…"
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none" />
             {errors.description && <p className="text-xs text-danger mt-1">{errors.description[0]}</p>}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1.5">Prix (FCFA)</label>
+              <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1.5">Prix indicatif par mission (FCFA) *</label>
               <input id="price" name="price" type="number" min="0" step="100" required value={form.price} onChange={handleChange}
-                placeholder="Ex: 2000"
+                placeholder="Ex: 15000"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
               {errors.price && <p className="text-xs text-danger mt-1">{errors.price[0]}</p>}
+              <p className="text-xs text-muted mt-1">Montant de référence — l&apos;équipe l&apos;ajuste au besoin réel.</p>
             </div>
             <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1.5">Localisation</label>
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1.5">Zone d&apos;intervention</label>
               <input id="location" name="location" type="text" value={form.location} onChange={handleChange}
-                placeholder="Ex: Mermoz, Dakar"
+                placeholder="Ex: Mermoz, Sacré-Cœur, Dakar"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
               {errors.location && <p className="text-xs text-danger mt-1">{errors.location[0]}</p>}
+              <p className="text-xs text-muted mt-1">Sert à vous proposer les demandes proches de vous.</p>
             </div>
           </div>
 
