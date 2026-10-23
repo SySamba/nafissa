@@ -22,9 +22,7 @@ import {
   CalendarDays,
   Wallet,
   LifeBuoy,
-  Loader,
 } from 'lucide-react';
-import { authAPI } from '../api/services';
 
 const ROLE_LABELS = {
   maman: 'Cliente',
@@ -34,7 +32,7 @@ const ROLE_LABELS = {
 };
 
 export default function Layout({ children }) {
-  const { user, logout, isAdmin, isMaman, isPrestataire, loadUser } = useAuth();
+  const { user, logout, isAdmin, isMaman } = useAuth();
   const navigate = useNavigate();
   const homePath = user ? '/dashboard' : '/';
   const location = useLocation();
@@ -103,19 +101,7 @@ export default function Layout({ children }) {
     ];
   })();
 
-  const [savingAvailability, setSavingAvailability] = useState(false);
-  const toggleAvailability = async () => {
-    if (savingAvailability) return;
-    setSavingAvailability(true);
-    try {
-      await authAPI.updateProfile({ is_available: !user.is_available });
-      await loadUser();
-    } catch {
-      // Erreur réseau : l'état affiché reste inchangé, nouvelle tentative possible.
-    } finally {
-      setSavingAvailability(false);
-    }
-  };
+
 
   const isActive = (to) => {
     const [path, query] = to.split('?');
@@ -175,41 +161,6 @@ export default function Layout({ children }) {
           );
         })}
       </nav>
-
-      {/* Disponibilité prestataire : l'équipe ne propose des missions
-          qu'aux profils disponibles. */}
-      {isPrestataire && (
-        <div className="px-3 pb-3">
-          <div className="rounded-xl border border-gray-200 bg-gray-50/70 px-3.5 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-bold text-gray-900">Disponibilité</p>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={Boolean(user?.is_available)}
-                aria-label="Recevoir des propositions"
-                disabled={savingAvailability}
-                onClick={toggleAvailability}
-                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
-                  user?.is_available ? 'bg-emerald-500' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
-                    user?.is_available ? 'left-[1.375rem]' : 'left-0.5'
-                  }`}
-                />
-              </button>
-            </div>
-            <p className={`mt-1 text-xs font-semibold ${user?.is_available ? 'text-emerald-600' : 'text-gray-500'}`}>
-              {savingAvailability ? 'Enregistrement…' : user?.is_available ? 'Disponible' : 'Indisponible'}
-            </p>
-            <p className="mt-1 text-[11px] leading-snug text-gray-400">
-              Active ta disponibilité pour permettre à l&apos;équipe de te proposer des missions.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* External link */}
       <div className="px-3 pb-2">

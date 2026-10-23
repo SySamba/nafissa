@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { bookingAPI, serviceAPI, paymentAPI, marketAPI, adminAPI } from '../api/services';
 import usePolling from '../hooks/usePolling';
 import StatCard from '../components/dashboard/StatCard';
+import AvailabilityToggle from '../components/AvailabilityToggle';
 import StatusBreakdown from '../components/dashboard/StatusBreakdown';
 import RecentBookings from '../components/dashboard/RecentBookings';
 import { countActive } from '../lib/bookingStatus';
@@ -101,6 +102,10 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5 sm:space-y-6">
+      {/* Disponibilité en premier : le prestataire pilote la réception
+          des propositions directement depuis le haut de son tableau de bord. */}
+      {isPrestataire && <AvailabilityToggle />}
+
       {isPrestataire && !user?.verified && (
         <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
           <Clock size={20} className="mt-0.5 shrink-0 text-amber-600" />
