@@ -41,7 +41,7 @@ function renderServiceCard({ icon: Icon, name, desc, slug }) {
   const { image, gradient, emoji } = homepageCategoryVisual(slug);
   return (
     <Link
-      to="/services"
+      to="/demande"
       key={name}
       className="group flex flex-col overflow-hidden rounded-[1.4rem] border border-gray-200/90 bg-white shadow-md ring-1 ring-black/[0.04] hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
       <div className={`relative h-36 w-full shrink-0 overflow-hidden bg-gradient-to-br ${gradient} sm:h-44`}>

@@ -2,11 +2,12 @@ import {
   X, Star, Mail, Phone, MapPin, Users, Calendar, FileImage, XCircle, CheckCircle,
   Briefcase, AlertTriangle, MessageSquare,
 } from 'lucide-react';
+import { priceUnitSuffix } from '../lib/pricing';
 
 const ROLE_LABELS = { maman: 'Cliente', etudiant: 'Prestataire (étudiant)', artisan: 'Prestataire', admin: 'Admin' };
 
 const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('fr-FR') : '');
-const fmtPrice = (p) => `${Number(p).toLocaleString('fr-FR')} FCFA`;
+const fmtPrice = (p, unit) => `${Number(p).toLocaleString('fr-FR')} FCFA${priceUnitSuffix(unit)}`;
 
 function Stars({ value, size = 14 }) {
   return (
@@ -115,7 +116,7 @@ export default function ProviderDossierModal({ provider, onClose, onAssign, assi
             <Stat value={p.missions_en_cours ?? 0} label="Missions en cours" tone="bg-primary/5 border-primary/20 text-primary" />
             <Stat value={p.missions_annulees ?? 0} label="Missions annulées" tone="bg-red-50 border-red-100 text-danger" />
             <Stat
-              value={p.category_price != null ? fmtPrice(p.category_price) : '—'}
+              value={p.category_price != null ? fmtPrice(p.category_price, 'mission') : '—'}
               label="Tarif dans cette catégorie"
               tone="bg-amber-50 border-amber-100 text-amber-700"
             />
@@ -173,7 +174,7 @@ export default function ProviderDossierModal({ provider, onClose, onAssign, assi
                         {!s.available ? ' · indisponible' : ''}
                       </p>
                     </div>
-                    <span className="shrink-0 font-bold text-secondary">{fmtPrice(s.price)}</span>
+                    <span className="shrink-0 font-bold text-secondary">{fmtPrice(s.price, s.price_unit)}</span>
                   </li>
                 ))}
               </ul>

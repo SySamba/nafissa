@@ -3,12 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { serviceAPI, categoryAPI } from '../api/services';
 import { ArrowLeft, Plus, Clock } from 'lucide-react';
+import { priceUnitOptions } from '../lib/pricing';
 
 export default function ServiceCreate() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [categories, setCategories] = useState([]);
-  const [form, setForm] = useState({ category_id: '', title: '', description: '', price: '', location: '' });
+  const [form, setForm] = useState({ category_id: '', title: '', description: '', price: '', price_unit: 'mission', location: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -116,7 +117,14 @@ export default function ServiceCreate() {
                 placeholder="Ex: 15000"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
               {errors.price && <p className="text-xs text-danger mt-1">{errors.price[0]}</p>}
-              <p className="text-xs text-muted mt-1">Montant de référence — l&apos;équipe l&apos;ajuste au besoin réel.</p>
+              <p className="text-xs text-muted mt-1">Le prix définitif sera confirmé selon le besoin de la cliente.</p>
+            </div>
+            <div>
+              <label htmlFor="price_unit" className="block text-sm font-medium text-gray-700 mb-1.5">Mode de tarification *</label>
+              <select id="price_unit" name="price_unit" required value={form.price_unit} onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                {priceUnitOptions().map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
+              </select>
             </div>
             <div>
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1.5">Zone d&apos;intervention</label>

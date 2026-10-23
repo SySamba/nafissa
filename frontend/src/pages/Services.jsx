@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { serviceAPI, categoryAPI } from '../api/services';
 import { Search, MapPin, Filter, Plus, X, Edit, Trash2, User } from 'lucide-react';
 import { categoryVisual } from '../lib/categoryImages';
+import { priceUnitSuffix } from '../lib/pricing';
 
 const ICON_MAP = {
   home: '🏠', baby: '👶', scissors: '✂️', utensils: '🍳',
@@ -202,7 +203,7 @@ export default function Services() {
                   <span className="text-xs font-medium bg-primary/10 text-primary px-2.5 py-1 rounded-full">
                     {service.category?.name}
                   </span>
-                  <span className="text-lg font-bold text-secondary">{Number(service.price).toLocaleString()} FCFA</span>
+                  <span className="text-lg font-bold text-secondary">{Number(service.price).toLocaleString()} FCFA{priceUnitSuffix(service.price_unit)}</span>
                 </div>
                 <h3 className="font-semibold text-gray-900 group-hover:text-primary transition-colors">{service.title}</h3>
                 <p className="text-sm text-muted mt-1 line-clamp-2">{service.description}</p>

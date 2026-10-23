@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import BrandMark from './BrandMark';
-import InstallPwa from './InstallPwa';
 import { notificationAPI } from '../api/services';
 import usePolling from '../hooks/usePolling';
 import {
@@ -213,7 +212,6 @@ export default function Layout({ children }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <InstallPwa />
             {user && (
               <Link
                 to="/notifications"

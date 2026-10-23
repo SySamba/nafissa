@@ -229,6 +229,7 @@ export default async function adminRoutes(fastify) {
           id: s.id,
           title: s.title,
           price: s.price,
+          price_unit: s.priceUnit,
           location: s.location,
           available: s.available,
           category: s.category?.name,

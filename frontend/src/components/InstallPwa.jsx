@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Download, Share, X } from 'lucide-react';
 
 /**
@@ -12,6 +12,7 @@ export default function InstallPwa() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const rootRef = useRef(null);
 
   useEffect(() => {
     const beforeInstall = (e) => {
@@ -40,6 +41,17 @@ export default function InstallPwa() {
     };
   }, []);
 
+  // Clic n'importe où ailleurs → le panneau se referme (il ne bloque jamais
+  // la page : simple bulle, pas de voile plein écran).
+  useEffect(() => {
+    if (!showHelp) return undefined;
+    const onPointerDown = (e) => {
+      if (rootRef.current && !rootRef.current.contains(e.target)) setShowHelp(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [showHelp]);
+
   const handleClick = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
@@ -54,7 +66,7 @@ export default function InstallPwa() {
   if (isInstalled) return null;
 
   return (
-    <div className="relative">
+    <div className="relative" ref={rootRef}>
       <button
         type="button"
         onClick={handleClick}

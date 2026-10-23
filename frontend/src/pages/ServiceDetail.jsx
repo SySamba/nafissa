@@ -16,6 +16,7 @@ import {
   Phone,
 } from 'lucide-react';
 import { categoryVisual } from '../lib/categoryImages';
+import { priceUnitSuffix } from '../lib/pricing';
 
 export default function ServiceDetail() {
   const { id } = useParams();
@@ -179,7 +180,7 @@ export default function ServiceDetail() {
             {service.category?.name}
           </span>
           <span className="absolute bottom-4 right-4 text-lg font-bold text-white drop-shadow">
-            {Number(service.price).toLocaleString()} FCFA
+            {Number(service.price).toLocaleString()} FCFA{priceUnitSuffix(service.price_unit)}
           </span>
         </div>
         <div className="p-6 sm:p-8">

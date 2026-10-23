@@ -134,6 +134,8 @@ model Service {
   title       String   @db.VarChar(200)
   description String?  @db.Text
   price       Decimal  @db.Decimal(10, 2)
+  /// Mode de tarification : heure | jour | mission | forfait.
+  priceUnit   String?  @map("price_unit") @db.VarChar(20)
   location    String?  @db.VarChar(200)
   available   Boolean  @default(true)
   lat         Float?

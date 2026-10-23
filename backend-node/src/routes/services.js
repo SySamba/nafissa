@@ -130,12 +130,13 @@ export default async function serviceRoutes(fastify) {
       title: z.string().max(200),
       description: z.string().max(2000).optional().nullable(),
       price: z.coerce.number().min(0),
+      price_unit: z.enum(['heure', 'jour', 'mission', 'forfait']).optional(),
       location: z.string().max(200).optional().nullable(),
     });
     const parsed = schema.safeParse(request.body || {});
     if (!parsed.success) return reply.code(422).send({ message: 'Données invalides.' });
     const u = request.user;
-    const { category_id, title, description, price, location } = parsed.data;
+    const { category_id, title, description, price, price_unit, location } = parsed.data;
     if (u.role !== 'etudiant' && u.role !== 'artisan') {
       return reply.code(403).send({ message: 'Seuls les prestataires peuvent créer des services.' });
     }
@@ -152,6 +153,7 @@ export default async function serviceRoutes(fastify) {
         title,
         description: description ?? null,
         price,
+        priceUnit: price_unit ?? 'mission',
         location: location ?? null,
         lat: coords?.lat ?? null,
         lng: coords?.lng ?? null,
@@ -178,6 +180,7 @@ export default async function serviceRoutes(fastify) {
       title: z.string().max(200).optional(),
       description: z.string().max(2000).optional().nullable(),
       price: z.coerce.number().min(0).optional(),
+      price_unit: z.enum(['heure', 'jour', 'mission', 'forfait']).optional(),
       location: z.string().max(200).optional().nullable(),
       available: z.boolean().optional(),
     });
@@ -189,6 +192,7 @@ export default async function serviceRoutes(fastify) {
     if (d.title !== undefined) data.title = d.title;
     if (d.description !== undefined) data.description = d.description;
     if (d.price !== undefined) data.price = d.price;
+    if (d.price_unit !== undefined) data.priceUnit = d.price_unit;
     if (d.location !== undefined) {
       data.location = d.location;
       const coords = await geocodeAddress(d.location);

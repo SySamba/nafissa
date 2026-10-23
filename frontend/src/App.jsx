@@ -41,16 +41,16 @@ function AppRoutes() {
           <ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>
         } />
         <Route path="/services" element={
-          <Layout><Services /></Layout>
+          <ProtectedRoute providerOnly><Layout><Services /></Layout></ProtectedRoute>
         } />
         <Route path="/services/create" element={
-          <ProtectedRoute><Layout><ServiceCreate /></Layout></ProtectedRoute>
+          <ProtectedRoute providerOnly><Layout><ServiceCreate /></Layout></ProtectedRoute>
         } />
         <Route path="/services/:id" element={
-          <Layout><ServiceDetail /></Layout>
+          <ProtectedRoute providerOnly><Layout><ServiceDetail /></Layout></ProtectedRoute>
         } />
         <Route path="/services/:id/edit" element={
-          <ProtectedRoute><Layout><ServiceEdit /></Layout></ProtectedRoute>
+          <ProtectedRoute providerOnly><Layout><ServiceEdit /></Layout></ProtectedRoute>
         } />
         <Route path="/bookings" element={
           <ProtectedRoute><Layout><Bookings /></Layout></ProtectedRoute>

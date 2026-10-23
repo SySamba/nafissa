@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { serviceAPI, categoryAPI } from '../api/services';
 import { ArrowLeft, Save } from 'lucide-react';
+import { priceUnitOptions } from '../lib/pricing';
 
 export default function ServiceEdit() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
-  const [form, setForm] = useState({ category_id: '', title: '', description: '', price: '', location: '', available: true });
+  const [form, setForm] = useState({ category_id: '', title: '', description: '', price: '', price_unit: 'mission', location: '', available: true });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -23,6 +24,7 @@ export default function ServiceEdit() {
         title: s.title,
         description: s.description || '',
         price: String(s.price),
+        price_unit: s.price_unit || 'mission',
         location: s.location || '',
         available: s.available,
       });
@@ -101,15 +103,22 @@ export default function ServiceEdit() {
             {errors.description && <p className="text-xs text-danger mt-1">{errors.description[0]}</p>}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1.5">Prix (FCFA)</label>
+              <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1.5">Prix indicatif (FCFA) *</label>
               <input id="price" name="price" type="number" min="0" step="100" required value={form.price} onChange={handleChange}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
               {errors.price && <p className="text-xs text-danger mt-1">{errors.price[0]}</p>}
             </div>
             <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1.5">Localisation</label>
+              <label htmlFor="price_unit" className="block text-sm font-medium text-gray-700 mb-1.5">Mode de tarification</label>
+              <select id="price_unit" name="price_unit" value={form.price_unit} onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
+                {priceUnitOptions().map((o) => (<option key={o.value} value={o.value}>{o.label}</option>))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1.5">Zone d&apos;intervention</label>
               <input id="location" name="location" type="text" value={form.location} onChange={handleChange}
                 placeholder="Ex: Mermoz, Dakar"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
