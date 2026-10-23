@@ -37,6 +37,22 @@ export async function buildApp() {
     bodyLimit: 12 * 1024 * 1024,
   });
 
+  // Mode maintenance (MAINTENANCE_MODE=true dans hPanel) : page d'attente
+  // pour les visiteurs, 503 JSON pour l'API. /up reste accessible pour les
+  // sondes de santé.
+  const maintenancePage = path.join(__dirname, 'maintenance.html');
+  const maintenanceHtml = fs.existsSync(maintenancePage)
+    ? fs.readFileSync(maintenancePage, 'utf8')
+    : '<!doctype html><title>Maintenance</title><h1>Maintenance en cours</h1>';
+  fastify.addHook('onRequest', async (request, reply) => {
+    if (process.env.MAINTENANCE_MODE !== 'true') return;
+    if (request.url === '/up') return;
+    if (request.url.startsWith('/api/')) {
+      return reply.code(503).send({ message: 'La plateforme est en maintenance. Réessayez dans quelques instants.' });
+    }
+    return reply.code(503).type('text/html').send(maintenanceHtml);
+  });
+
   await fastify.register(helmet, { contentSecurityPolicy: false });
   await fastify.register(compress);
   await fastify.register(cors, {
