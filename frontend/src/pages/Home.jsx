@@ -30,7 +30,7 @@ const SECONDARY_SERVICES = [
 ];
 
 const WORKFLOW_STEPS = [
-  { num: '1', title: 'Le client crée une demande', desc: 'Depuis une fiche service, vous déposez vos dates, votre lieu et le détail du besoin.', icon: Sparkles },
+  { num: '1', title: 'Le client crée une demande', desc: 'Vous décrivez le besoin, la date, l\'heure et le lieu — notre équipe s\'occupe du reste.', icon: Sparkles },
   { num: '2', title: 'Détection automatique', desc: 'La plateforme relie localisation et catégorie de service pour cadrer la mission.', icon: MapPinned },
   { num: '3', title: 'Calcul intelligent', desc: 'Le moteur met en avant les prestataires proches, disponibles et mieux notés.', icon: Cpu },
   { num: '4', title: 'Tableau administrateur', desc: 'L’admin consulte une short-list des meilleurs candidats pour la mission.', icon: LayoutDashboard },
@@ -97,9 +97,6 @@ export default function Home() {
             <Link to="/demande" className="text-primary font-bold hover:text-primary-dark transition-colors">Faire une demande</Link>
           </div>
           <div className="flex items-center gap-3">
-            <div className="hidden md:flex">
-              <InstallPwa />
-            </div>
             {user ? (
               <Link to="/dashboard" className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-primary/25 hover:shadow-primary/40">
                 Mon espace <ChevronRight size={14} className="inline ml-1" />
@@ -148,9 +145,6 @@ export default function Home() {
                   </Link>
                 </>
               )}
-              <div className="px-3 pt-2">
-                <InstallPwa />
-              </div>
             </div>
           </div>
         )}
@@ -465,6 +459,10 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Invite d'installation PWA : popup discret, aucun bouton permanent,
+          ne bloque ni le défilement ni la page. */}
+      <InstallPwa />
     </div>
   );
 }

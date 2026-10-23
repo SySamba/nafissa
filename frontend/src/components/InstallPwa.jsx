@@ -1,105 +1,135 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, Share, X } from 'lucide-react';
 
 /**
- * Bouton « Installer l'application » (PWA).
- * - Navigateur compatible → prompt natif d'installation (Android, Chrome/Edge desktop)
- * - Sinon → panneau d'aide adapté (iOS : Partager → écran d'accueil ;
- *   Android : menu ⋮ → Installer l'application)
+ * Invite d'installation PWA — popup automatique, page d'accueil uniquement.
+ *
+ * - Apparaît seule après ~4 s, en bas d'écran, SANS voile : la page reste
+ *   utilisable et le défilement n'est jamais bloqué.
+ * - Navigateur compatible → bouton « Installer » (prompt natif).
+ * - Sinon → instructions adaptées (iOS : Partager → écran d'accueil ;
+ *   Android : menu ⋮ → Installer l'application).
+ * - Fermée ou installée → n'est pas re-proposée avant 7 jours.
  */
+
+const DISMISS_KEY = 'nafissa-install-dismissed-at';
+const RESHOW_AFTER_MS = 7 * 24 * 60 * 60 * 1000; // 7 jours
+const SHOW_DELAY_MS = 4000;
+
+function dismissedRecently() {
+  try {
+    const at = Number(localStorage.getItem(DISMISS_KEY) || 0);
+    return at > 0 && Date.now() - at < RESHOW_AFTER_MS;
+  } catch {
+    return false;
+  }
+}
+
+function markDismissed() {
+  try {
+    localStorage.setItem(DISMISS_KEY, String(Date.now()));
+  } catch {
+    // Stockage indisponible : le popup se referme simplement pour la session.
+  }
+}
+
 export default function InstallPwa() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [visible, setVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
-  const rootRef = useRef(null);
 
   useEffect(() => {
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    if (standalone || dismissedRecently()) return undefined;
+
+    const ua = navigator.userAgent;
+    setIsIOS(/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+
+    const timer = setTimeout(() => setVisible(true), SHOW_DELAY_MS);
+
     const beforeInstall = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
     };
-
-    const onAppInstalled = () => {
-      setDeferredPrompt(null);
-      setIsInstalled(true);
-      setShowHelp(false);
+    const onInstalled = () => {
+      setVisible(false);
+      markDismissed();
     };
 
     window.addEventListener('beforeinstallprompt', beforeInstall);
-    window.addEventListener('appinstalled', onAppInstalled);
-
-    const ua = navigator.userAgent;
-    const isAppleDevice = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-    setIsIOS(isAppleDevice);
-    setIsInstalled(Boolean(isStandalone));
-
+    window.addEventListener('appinstalled', onInstalled);
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', beforeInstall);
-      window.removeEventListener('appinstalled', onAppInstalled);
+      window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
 
-  // Clic n'importe où ailleurs → le panneau se referme (il ne bloque jamais
-  // la page : simple bulle, pas de voile plein écran).
-  useEffect(() => {
-    if (!showHelp) return undefined;
-    const onPointerDown = (e) => {
-      if (rootRef.current && !rootRef.current.contains(e.target)) setShowHelp(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    return () => document.removeEventListener('pointerdown', onPointerDown);
-  }, [showHelp]);
-
-  const handleClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') setIsInstalled(true);
-      setDeferredPrompt(null);
-      return;
-    }
-    setShowHelp((v) => !v);
+  const close = () => {
+    setVisible(false);
+    markDismissed();
   };
 
-  if (isInstalled) return null;
+  const install = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+    if (outcome === 'accepted') {
+      setVisible(false);
+      markDismissed();
+    }
+  };
+
+  if (!visible) return null;
 
   return (
-    <div className="relative" ref={rootRef}>
+    <div
+      role="dialog"
+      aria-label="Installer l'application NAFISSA"
+      className="fixed inset-x-4 bottom-4 z-40 mx-auto max-w-sm rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-80"
+    >
       <button
         type="button"
-        onClick={handleClick}
-        className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-dark"
+        onClick={close}
+        className="absolute right-2 top-2 rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+        aria-label="Fermer"
       >
-        <Download size={18} /> Installer
+        <X size={16} />
       </button>
 
-      {showHelp && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700 shadow-xl">
-          <button
-            type="button"
-            onClick={() => setShowHelp(false)}
-            className="absolute right-2 top-2 rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-            aria-label="Fermer"
-          >
-            <X size={15} />
-          </button>
-          <p className="mb-2 font-bold text-gray-900">Installer NAFISSA</p>
-          {isIOS ? (
-            <p className="leading-relaxed">
-              Sur iPhone/iPad : appuyez sur <Share size={14} className="inline -translate-y-0.5 text-primary" />{' '}
-              <b>Partager</b> dans Safari, puis choisissez{' '}
-              <b>« Sur l'écran d'accueil »</b>.
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Download size={19} />
+        </span>
+        <div className="min-w-0 flex-1 pr-5">
+          <p className="text-sm font-bold text-gray-900">Installer NAFISSA</p>
+          {deferredPrompt ? (
+            <>
+              <p className="mt-1 text-xs leading-relaxed text-gray-500">
+                Accédez à vos demandes en un geste, comme une vraie application.
+              </p>
+              <button
+                type="button"
+                onClick={install}
+                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white transition hover:bg-primary-dark"
+              >
+                <Download size={14} /> Installer l'application
+              </button>
+            </>
+          ) : isIOS ? (
+            <p className="mt-1 text-xs leading-relaxed text-gray-500">
+              Dans Safari : <Share size={12} className="inline -translate-y-0.5 text-primary" />{' '}
+              <b>Partager</b> puis <b>« Sur l'écran d'accueil »</b>.
             </p>
           ) : (
-            <p className="leading-relaxed">
-              Ouvrez le menu <b>⋮</b> de votre navigateur puis choisissez{' '}
-              <b>« Installer l'application »</b> ou <b>« Ajouter à l'écran d'accueil »</b>.
+            <p className="mt-1 text-xs leading-relaxed text-gray-500">
+              Menu <b>⋮</b> du navigateur puis <b>« Installer l'application »</b> ou{' '}
+              <b>« Ajouter à l'écran d'accueil »</b>.
             </p>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

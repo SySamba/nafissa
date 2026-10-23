@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { bookingAPI } from '../api/services';
 import usePolling from '../hooks/usePolling';
@@ -13,6 +13,8 @@ export default function Bookings() {
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
+  const [searchParams] = useSearchParams();
+  const onlyReservations = searchParams.get('vue') === 'reservations';
 
   const fetchBookings = useCallback(() => {
     setLoading(true);
@@ -30,16 +32,26 @@ export default function Bookings() {
   }, [fetchBookings]);
   usePolling(fetchBookings, 15000, [page]);
 
-  const filteredBookings = statusFilter
-    ? bookings.filter((b) => b.status === statusFilter)
-    : bookings;
+  // « Réservations » = demandes déjà prises en charge (prestataire attribué),
+  // confirmées, passées ou annulées. Les demandes encore en file d'attribution
+  // restent dans « Mes demandes ».
+  const RESERVATION_STATUSES = ['acceptee', 'payee', 'en_cours', 'terminee', 'refusee', 'annulee'];
+  const filteredBookings = bookings
+    .filter((b) => (onlyReservations ? RESERVATION_STATUSES.includes(b.status) : true))
+    .filter((b) => (statusFilter ? b.status === statusFilter : true));
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Mes réservations</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {isMaman ? (onlyReservations ? 'Mes réservations' : 'Mes demandes') : 'Mes réservations'}
+        </h1>
         <p className="text-muted text-sm mt-1">
-          {isMaman ? 'Suivez vos réservations de services' : 'Gérez les demandes de vos clients'}
+          {isMaman
+            ? (onlyReservations
+              ? 'Interventions confirmées, passées ou annulées'
+              : 'Demandes en attente, en cours d\'attribution ou traitées')
+            : 'Gérez les demandes de vos clients'}
         </p>
       </div>
 
@@ -60,13 +72,13 @@ export default function Bookings() {
       ) : filteredBookings.length === 0 ? (
         <div className="text-center py-20 bg-surface rounded-xl border border-gray-100">
           <Calendar size={48} className="mx-auto text-muted/30 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900">Aucune réservation</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{onlyReservations ? 'Aucune réservation' : 'Aucune demande'}</h3>
           <p className="text-muted text-sm mt-1">
-            {isMaman ? 'Parcourez les services pour faire votre première réservation.' : 'Aucune demande reçue pour le moment.'}
+            {isMaman ? 'Décrivez votre besoin : notre équipe vous attribue un prestataire vérifié.' : 'Aucune demande reçue pour le moment.'}
           </p>
           {isMaman && (
-            <Link to="/services" className="inline-flex items-center gap-2 mt-4 text-primary font-medium text-sm hover:text-primary-dark">
-              Parcourir les services <ArrowRight size={16} />
+            <Link to="/demande" className="inline-flex items-center gap-2 mt-4 text-primary font-medium text-sm hover:text-primary-dark">
+              Faire une demande <ArrowRight size={16} />
             </Link>
           )}
         </div>

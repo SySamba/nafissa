@@ -10,12 +10,15 @@ import {
   LogOut,
   User,
   Home,
-  Search,
   Calendar,
   CreditCard,
   Shield,
   ChevronDown,
   ExternalLink,
+  FilePlus2,
+  CheckCircle,
+  Briefcase,
+  ClipboardList,
 } from 'lucide-react';
 
 const ROLE_LABELS = {
@@ -26,7 +29,7 @@ const ROLE_LABELS = {
 };
 
 export default function Layout({ children }) {
-  const { user, logout, isAdmin, isMaman, isPrestataire } = useAuth();
+  const { user, logout, isAdmin, isMaman } = useAuth();
   const navigate = useNavigate();
   const homePath = user ? '/dashboard' : '/';
   const location = useLocation();
@@ -53,18 +56,55 @@ export default function Layout({ children }) {
     navigate('/login');
   };
 
-  const navLinks = [
-    { to: '/', label: 'Accueil', icon: Home, show: !user },
-    { to: '/dashboard', label: 'Tableau de bord', icon: Home, show: !!user },
-    { to: '/services', label: 'Services', icon: Search, show: true },
-    { to: '/bookings', label: 'Réservations', icon: Calendar, show: isMaman || isPrestataire },
-    { to: '/payments', label: 'Paiements', icon: CreditCard, show: isMaman || isPrestataire },
-    { to: '/admin', label: 'Administration', icon: Shield, show: isAdmin },
-    { to: '/notifications', label: 'Notifications', icon: Bell, show: !!user, badge: unreadCount },
-    { to: '/profile', label: 'Mon profil', icon: User, show: !!user },
-  ].filter((l) => l.show);
+  const navLinks = (() => {
+    const common = [
+      { to: '/notifications', label: 'Notifications', desc: 'Quand une demande évolue ou qu\'une réservation est confirmée.', icon: Bell, badge: unreadCount },
+      { to: '/profile', label: 'Mon profil', desc: 'Informations, adresse et coordonnées.', icon: User },
+    ];
+    if (!user) {
+      return [
+        { to: '/', label: 'Accueil', icon: Home },
+        { to: '/demande', label: 'Faire une demande', desc: 'Décrire votre besoin en quelques champs.', icon: FilePlus2 },
+      ];
+    }
+    if (isMaman) {
+      return [
+        { to: '/dashboard', label: 'Tableau de bord', desc: 'Résumé des demandes, réservations et prochaines interventions.', icon: Home },
+        { to: '/demande', label: 'Nouvelle demande', desc: 'Décrire un besoin de ménage, cuisine, garde d\'enfants ou autre service.', icon: FilePlus2 },
+        { to: '/bookings', label: 'Mes demandes', desc: 'Demandes en attente, en cours d\'attribution ou traitées.', icon: ClipboardList },
+        { to: '/bookings?vue=reservations', label: 'Mes réservations', desc: 'Interventions confirmées, passées ou annulées.', icon: CheckCircle },
+        { to: '/payments', label: 'Mes paiements', desc: 'Montants, statuts de paiement et reçus disponibles.', icon: CreditCard },
+        ...common,
+      ];
+    }
+    if (isAdmin) {
+      return [
+        { to: '/dashboard', label: 'Tableau de bord', icon: Home },
+        { to: '/admin', label: 'Administration', desc: 'Attribuer les demandes, valider les comptes.', icon: Shield },
+        { to: '/services', label: 'Services', desc: 'Catalogue des offres prestataires.', icon: Briefcase },
+        { to: '/bookings', label: 'Réservations', desc: 'Toutes les demandes de la plateforme.', icon: Calendar },
+        { to: '/payments', label: 'Paiements', desc: 'Encaissements et libération des fonds.', icon: CreditCard },
+        ...common,
+      ];
+    }
+    return [
+      { to: '/dashboard', label: 'Tableau de bord', desc: 'Résumé de vos missions et offres.', icon: Home },
+      { to: '/bookings', label: 'Mes missions', desc: 'Missions attribuées par l\'équipe.', icon: Calendar },
+      { to: '/services', label: 'Mes services', desc: 'Publier et gérer vos offres.', icon: Briefcase },
+      { to: '/payments', label: 'Paiements', desc: 'Historique des versements.', icon: CreditCard },
+      ...common,
+    ];
+  })();
 
-  const isActive = (path) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const isActive = (to) => {
+    const [path, query] = to.split('?');
+    if (query) {
+      return location.pathname === path && location.search.includes(query);
+    }
+    // « Mes demandes » ne doit pas rester actif sur la vue « réservations ».
+    if (path === '/bookings' && location.search.includes('vue=reservations')) return false;
+    return location.pathname === path || location.pathname.startsWith(`${path}/`);
+  };
 
   const closeMobile = () => setAsideOpen(false);
 
@@ -78,14 +118,14 @@ export default function Layout({ children }) {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Menu</p>
-        {navLinks.map(({ to, label, icon: Icon, badge }) => {
+        {navLinks.map(({ to, label, desc, icon: Icon, badge }) => {
           const active = isActive(to);
           return (
             <Link
               key={to}
               to={to}
               onClick={closeMobile}
-              className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
+              className={`group relative flex items-start gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-all ${
                 active
                   ? 'bg-primary/8 text-primary'
                   : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
@@ -94,10 +134,17 @@ export default function Layout({ children }) {
               {active && (
                 <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
               )}
-              <Icon size={19} strokeWidth={active ? 2.5 : 2} className={active ? 'text-primary' : 'text-gray-400 group-hover:text-gray-600'} />
-              <span className="flex-1">{label}</span>
+              <Icon size={19} strokeWidth={active ? 2.5 : 2} className={`mt-0.5 shrink-0 ${active ? 'text-primary' : 'text-gray-400 group-hover:text-gray-600'}`} />
+              <span className="min-w-0 flex-1">
+                <span className="block">{label}</span>
+                {desc && (
+                  <span className={`block text-[11px] font-normal leading-snug ${active ? 'text-primary/70' : 'text-gray-400'}`}>
+                    {desc}
+                  </span>
+                )}
+              </span>
               {badge > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-bold text-white">
+                <span className="mt-0.5 flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-bold text-white">
                   {badge > 9 ? '9+' : badge}
                 </span>
               )}

@@ -226,7 +226,7 @@ export default function Dashboard() {
               </p>
 
               <Link
-                to="/services"
+                to="/demande"
                 className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition hover:bg-primary-dark sm:w-auto sm:px-7"
               >
                 <LayoutGrid size={17} /> Décrire mon besoin
@@ -315,7 +315,7 @@ export default function Dashboard() {
             }
             emptyCta={
               isMaman || (!isPrestataire && !isAdmin)
-                ? { to: '/dashboard', label: 'Tableau de bord' }
+                ? { to: '/demande', label: 'Faire une demande' }
                 : null
             }
           />
@@ -340,10 +340,10 @@ export default function Dashboard() {
                   desc: 'Création, prix, disponibilités.',
                 },
                 isMaman && {
-                  to: '/services',
+                  to: '/demande',
                   icon: Search,
-                  title: 'Parcourir les services',
-                  desc: 'Offres de prestataires vérifiés.',
+                  title: 'Nouvelle demande',
+                  desc: 'Décrire un besoin, notre équipe attribue.',
                 },
                 isAdmin && {
                   to: '/admin',
