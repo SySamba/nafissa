@@ -57,6 +57,11 @@ export function withHiddenProvider(service) {
   };
 }
 
+/** Libellé d'une demande : titre de l'annonce ou, à défaut, la catégorie demandée. */
+export function bookingLabel(b) {
+  return b?.service?.title ?? b?.category?.name ?? 'service';
+}
+
 export function stripUser(u) {
   if (!u) return u;
   const { password, rememberToken, ...rest } = u;

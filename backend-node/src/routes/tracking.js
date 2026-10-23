@@ -16,6 +16,7 @@ export default async function trackingRoutes(fastify) {
       where: { trackingToken: token },
       include: {
         service: { include: { category: true } },
+        category: true,
         provider: { include: { profile: true } },
       },
     });
@@ -25,8 +26,8 @@ export default async function trackingRoutes(fastify) {
       demande: {
         numero: booking.id.toString(),
         status: booking.status,
-        service: booking.service?.title,
-        categorie: booking.service?.category?.name,
+        service: booking.service?.title ?? null,
+        categorie: booking.service?.category?.name ?? booking.category?.name ?? null,
         date: booking.bookingDate.toISOString().slice(0, 10),
         heure: booking.bookingTime.toISOString().slice(11, 16),
         lieu: booking.location,

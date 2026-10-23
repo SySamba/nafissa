@@ -261,8 +261,8 @@ export default function BookingDetail() {
 
         <div className="space-y-4">
           <div className="bg-gray-50 rounded-xl p-4">
-            <h3 className="font-semibold text-gray-900 mb-1">{booking.service?.title}</h3>
-            <p className="text-sm text-muted">{booking.service?.category?.name}</p>
+            <h3 className="font-semibold text-gray-900 mb-1">{booking.service?.title ?? booking.category?.name ?? 'Demande'}</h3>
+            <p className="text-sm text-muted">{booking.service?.category?.name ?? booking.category?.name}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -291,7 +291,7 @@ export default function BookingDetail() {
 
           <div className="flex items-center justify-between pt-4 border-t border-gray-100">
             <span className="text-sm text-muted">Montant total</span>
-            <span className="text-xl font-bold text-secondary">{Number(booking.total_price).toLocaleString()} FCFA</span>
+            <span className="text-xl font-bold text-secondary">{booking.total_price != null ? `${Number(booking.total_price).toLocaleString()} FCFA` : 'À confirmer'}</span>
           </div>
 
           {booking.notes && (
@@ -478,7 +478,7 @@ export default function BookingDetail() {
             {!showPayment ? (
               <button onClick={() => setShowPayment(true)}
                 className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white py-3 rounded-xl font-semibold transition-colors">
-                <CreditCard size={18} /> Payer {Number(booking.total_price).toLocaleString()} FCFA
+                <CreditCard size={18} /> Payer {booking.total_price != null ? `${Number(booking.total_price).toLocaleString()} FCFA` : '— prix à confirmer'}
               </button>
             ) : (
               <div className="space-y-4 border-t border-gray-100 pt-4">

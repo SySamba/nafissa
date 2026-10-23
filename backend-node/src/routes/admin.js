@@ -4,7 +4,7 @@ import { BS } from '../lib/constants.js';
 import { notify, bookingDetailPath } from '../lib/notifications.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { adminMiddleware } from '../middleware/admin.js';
-import { stripUser, userWithProfile } from '../lib/serializers.js';
+import { bookingLabel, stripUser, userWithProfile } from '../lib/serializers.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
 import { TOKENABLE_TYPE } from '../lib/auth-resolve.js';
 import { locateArea, distanceKm } from '../lib/dakar-areas.js';
@@ -101,10 +101,11 @@ export default async function adminRoutes(fastify) {
     const id = BigInt(request.params.id);
     const booking = await prisma.booking.findUnique({
       where: { id },
-      include: { service: true },
+      include: { service: true, category: true },
     });
     if (!booking) return reply.code(404).send({ message: 'Non trouvé.' });
-    const catId = booking.service.categoryId;
+    const catId = booking.service?.categoryId ?? booking.categoryId;
+    if (!catId) return reply.code(422).send({ message: 'Cette demande n a pas de catégorie.' });
 
     const candidates = await prisma.user.findMany({
       where: {
@@ -268,7 +269,7 @@ export default async function adminRoutes(fastify) {
     const bookingId = BigInt(request.params.id);
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { service: true, client: true },
+      include: { service: true, client: true, category: true },
     });
     if (!booking) return reply.code(404).send({ message: 'Non trouvé.' });
     if (booking.status !== BS.EN_ATTENTE_ADMIN) {
@@ -286,44 +287,65 @@ export default async function adminRoutes(fastify) {
       return reply.code(422).send({ message: 'Ce prestataire n\'est pas valide.' });
     }
 
+    // Demande « par catégorie » (sans annonce choisie) : on rattache la
+    // demande à l'offre du prestataire choisi dans cette catégorie, ce qui
+    // fixe aussi le prix pour la suite (paiement).
+    const data = { providerId: provider.id, status: BS.EN_ATTENTE_PRESTATAIRE };
+    let linkedService = booking.service;
+    if (!linkedService) {
+      const catId = booking.categoryId;
+      if (catId) {
+        linkedService = await prisma.service.findFirst({
+          where: { providerId: provider.id, categoryId: catId, available: true },
+          orderBy: { price: 'asc' },
+        });
+        if (linkedService) {
+          data.serviceId = linkedService.id;
+          if (booking.totalPrice == null) data.totalPrice = linkedService.price;
+        }
+      }
+    }
+
     const updated = await prisma.booking.update({
       where: { id: bookingId },
-      data: { providerId: provider.id, status: BS.EN_ATTENTE_PRESTATAIRE },
+      data,
       include: {
         service: { include: { category: true } },
+        category: true,
         client: true,
         provider: { include: { profile: true } },
       },
     });
+    const label = bookingLabel(updated);
 
     const bp = bookingDetailPath(bookingId);
     await notify(
       provider.id,
       'booking',
       'Nouvelle mission attribuée',
-      `L'administrateur vous a attribué une mission pour « ${booking.service.title} ». Veuillez accepter ou refuser.`,
+      `L'administrateur vous a attribué une mission pour « ${label} ». Veuillez accepter ou refuser.`,
       bp,
     );
     await notify(
       booking.clientId,
       'booking',
       'Prestataire trouvé',
-      `Un prestataire a été choisi pour votre demande « ${booking.service.title} ». En attente de sa confirmation.`,
+      `Un prestataire a été choisi pour votre demande « ${label} ». En attente de sa confirmation.`,
       bp,
     );
 
     // Suivi WhatsApp automatique : la cliente et le prestataire sont prévenus.
     await sendWhatsApp(
       booking.client?.phone,
-      clientStatusText({ ...booking, status: BS.EN_ATTENTE_PRESTATAIRE }),
+      clientStatusText({ ...updated, status: BS.EN_ATTENTE_PRESTATAIRE }),
       request.log,
-      waParams(booking.client?.name, { ...booking, status: BS.EN_ATTENTE_PRESTATAIRE }),
+      waParams(booking.client?.name, { ...updated, status: BS.EN_ATTENTE_PRESTATAIRE }),
     );
     await sendWhatsApp(
       provider.phone,
-      `Nouvelle mission NAFISSA : « ${booking.service.title} » à ${booking.location || 'Dakar'}, le ${booking.bookingDate.toISOString().slice(0, 10)}. Connectez-vous à votre espace pour accepter ou refuser.`,
+      `Nouvelle mission NAFISSA : « ${label} » à ${booking.location || 'Dakar'}, le ${booking.bookingDate.toISOString().slice(0, 10)}. Connectez-vous à votre espace pour accepter ou refuser.`,
       request.log,
-      waParams(provider.name, booking, `Nouvelle mission « ${booking.service.title} » à ${booking.location || 'Dakar'} le ${booking.bookingDate.toISOString().slice(0, 10)}. Connectez-vous pour accepter ou refuser.`),
+      waParams(provider.name, updated, `Nouvelle mission « ${label} » à ${booking.location || 'Dakar'} le ${booking.bookingDate.toISOString().slice(0, 10)}. Connectez-vous pour accepter ou refuser.`),
     );
 
     return {

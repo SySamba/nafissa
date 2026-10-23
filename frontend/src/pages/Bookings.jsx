@@ -84,7 +84,7 @@ export default function Bookings() {
                       <StatusIcon size={16} className={cfg.color.split(' ')[1]} />
                       <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${cfg.color}`}>{cfg.label}</span>
                     </div>
-                    <h3 className="font-semibold text-gray-900 truncate">{booking.service?.title}</h3>
+                    <h3 className="font-semibold text-gray-900 truncate">{booking.service?.title ?? booking.category?.name ?? 'Demande'}</h3>
                     <div className="flex items-center gap-4 mt-2 text-sm text-muted">
                       <span className="flex items-center gap-1">
                         <Calendar size={14} /> {new Date(booking.booking_date).toLocaleDateString('fr-FR')}
@@ -98,7 +98,7 @@ export default function Bookings() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-gray-900">{Number(booking.total_price).toLocaleString()} FCFA</p>
+                    <p className="text-lg font-bold text-gray-900">{booking.total_price != null ? `${Number(booking.total_price).toLocaleString()} FCFA` : 'À confirmer'}</p>
                     {booking.payment && (
                       <span className="text-xs text-secondary font-medium">Payé</span>
                     )}

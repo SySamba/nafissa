@@ -82,7 +82,7 @@ export default function Tracking() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-primary">Demande n°{demande.numero}</p>
-              <h1 className="mt-1.5 text-xl font-bold text-gray-900">{demande.service}</h1>
+              <h1 className="mt-1.5 text-xl font-bold text-gray-900">{demande.service ?? demande.categorie ?? 'Demande'}</h1>
               {demande.categorie && <p className="text-sm text-muted">{demande.categorie}</p>}
             </div>
             <span className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-bold ${cfg.color}`}>{cfg.label}</span>

@@ -46,7 +46,7 @@ function BookingRow({ booking, counterpartLabel, counterpart }) {
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-bold text-gray-900">
-          {booking.service?.title || 'Service'}
+          {booking.service?.title || booking.category?.name || 'Demande'}
         </p>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
           <span className="inline-flex items-center gap-1">

@@ -17,6 +17,7 @@ import Admin from './pages/Admin';
 import Profile from './pages/Profile';
 import ServiceEdit from './pages/ServiceEdit';
 import Tracking from './pages/Tracking';
+import Demande from './pages/Demande';
 
 function AppRoutes() {
   return (
@@ -25,6 +26,7 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/suivi/:token" element={<Tracking />} />
+      <Route path="/demande" element={<Demande />} />
 
       <Route path="/dashboard" element={
         <ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>

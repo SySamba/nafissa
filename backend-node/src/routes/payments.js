@@ -5,6 +5,7 @@ import { BS, COMMISSION_RATE, ES, PS } from '../lib/constants.js';
 import { notify, bookingDetailPath } from '../lib/notifications.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
+import { bookingLabel } from '../lib/serializers.js';
 
 function transactionRef() {
   const rand = randomBytes(6).toString('hex').toUpperCase();
@@ -25,7 +26,7 @@ export default async function paymentRoutes(fastify) {
 
     const booking = await prisma.booking.findUnique({
       where: { id: booking_id },
-      include: { service: true, provider: true },
+      include: { service: true, provider: true, category: true },
     });
     if (!booking) return reply.code(422).send({ message: "Cette réservation n'existe pas." });
     if (booking.clientId !== user.id) return reply.code(403).send({ message: 'Non autorisé.' });
@@ -37,6 +38,11 @@ export default async function paymentRoutes(fastify) {
     if (existing) return reply.code(422).send({ message: 'Un paiement existe déjà pour cette réservation.' });
 
     const amount = booking.totalPrice;
+    if (amount == null) {
+      return reply.code(422).send({
+        message: "Le prix sera fixé lors de l'attribution du prestataire.",
+      });
+    }
     const commission = Math.round(Number(amount) * COMMISSION_RATE * 100) / 100;
 
     const [payment] = await prisma.$transaction([
@@ -64,7 +70,7 @@ export default async function paymentRoutes(fastify) {
       user.id,
       'payment',
       'Paiement confirmé',
-      `Votre paiement de ${amount} FCFA pour « ${booking.service.title} » est sécurisé.`,
+      `Votre paiement de ${amount} FCFA pour « ${bookingLabel(booking)} » est sécurisé.`,
       payPath,
     );
     if (booking.providerId) {
@@ -72,7 +78,7 @@ export default async function paymentRoutes(fastify) {
         booking.providerId,
         'payment',
         'Paiement reçu (escrow)',
-        `Le paiement pour « ${booking.service.title} » est sécurisé en attente de validation.`,
+        `Le paiement pour « ${bookingLabel(booking)} » est sécurisé en attente de validation.`,
         payPath,
       );
     }
@@ -121,7 +127,7 @@ export default async function paymentRoutes(fastify) {
         booking.providerId,
         'payment',
         'Paiement libéré',
-        `Vous avez reçu ${netAmount} FCFA pour « ${booking.service.title} ».`,
+        `Vous avez reçu ${netAmount} FCFA pour « ${bookingLabel(booking)} ».`,
         bookingDetailPath(booking.id),
       );
     }

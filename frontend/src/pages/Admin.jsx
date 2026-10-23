@@ -201,8 +201,8 @@ export default function Admin() {
                             <span className="text-xs font-bold bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full">En attente</span>
                             <span className="text-xs text-gray-400 font-mono">#{booking.id}</span>
                           </div>
-                          <h3 className="font-bold text-gray-900">{booking.service?.title}</h3>
-                          <p className="text-sm text-gray-500 mt-0.5">{booking.service?.category?.name}</p>
+                          <h3 className="font-bold text-gray-900">{booking.service?.title ?? booking.category?.name ?? 'Demande'}</h3>
+                          <p className="text-sm text-gray-500 mt-0.5">{booking.service?.category?.name ?? booking.category?.name}</p>
                           <div className="flex flex-wrap items-center gap-3 mt-2.5 text-sm text-gray-500">
                             <span className="flex items-center gap-1"><Calendar size={14} /> {new Date(booking.booking_date).toLocaleDateString('fr-FR')}</span>
                             <span>{booking.booking_time}</span>
@@ -220,7 +220,7 @@ export default function Admin() {
                           </div>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-lg font-bold text-secondary">{Number(booking.total_price).toLocaleString()} FCFA</p>
+                          <p className="text-lg font-bold text-secondary">{booking.total_price != null ? `${Number(booking.total_price).toLocaleString()} FCFA` : 'Prix à définir'}</p>
                         </div>
                       </div>
                       <div className="mt-4 flex flex-wrap items-center gap-4">

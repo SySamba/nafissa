@@ -8,10 +8,11 @@ import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
 import { sendWhatsApp, clientStatusText, trackingLink, waParams } from '../lib/whatsapp-send.js';
 import { geocodeAddress } from '../lib/geocode.js';
-import { bookingForViewer } from '../lib/serializers.js';
+import { bookingForViewer, bookingLabel } from '../lib/serializers.js';
 
 const bookingInclude = {
   service: { include: { category: true } },
+  category: true,
   client: { include: { profile: true } },
   provider: { include: { profile: true } },
   payment: true,
@@ -100,7 +101,8 @@ export default async function bookingRoutes(fastify) {
   // Demande rapide : ouverte aux invités (nom + téléphone) comme aux clientes connectées.
   fastify.post('/bookings', { preHandler: optionalAuthMiddleware }, async (request, reply) => {
     const schema = z.object({
-      service_id: z.coerce.bigint(),
+      service_id: z.coerce.bigint().optional().nullable(),
+      category_id: z.coerce.bigint().optional().nullable(),
       booking_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       booking_time: z.string().regex(/^\d{2}:\d{2}$/),
       notes: z.string().max(1000).optional().nullable(),
@@ -129,9 +131,24 @@ export default async function bookingRoutes(fastify) {
       isGuest = found.isGuest;
     }
 
-    const service = await prisma.service.findUnique({ where: { id: v.service_id } });
-    if (!service) return reply.code(422).send({ message: "Ce service n'existe pas." });
-    if (!service.available) return reply.code(422).send({ message: "Ce service n'est pas disponible." });
+    if (!v.service_id && !v.category_id) {
+      return reply.code(422).send({ message: 'Indiquez un service ou une catégorie de besoin.' });
+    }
+
+    // Deux parcours : annonce précise (service_id) ou simple catégorie de
+    // besoin — dans les deux cas l'équipe attribue ensuite le prestataire.
+    let service = null;
+    let categoryId = null;
+    if (v.service_id) {
+      service = await prisma.service.findUnique({ where: { id: v.service_id } });
+      if (!service) return reply.code(422).send({ message: "Ce service n'existe pas." });
+      if (!service.available) return reply.code(422).send({ message: "Ce service n'est pas disponible." });
+      categoryId = service.categoryId;
+    } else {
+      const category = await prisma.category.findUnique({ where: { id: v.category_id } });
+      if (!category?.active) return reply.code(422).send({ message: "Cette catégorie n'existe pas." });
+      categoryId = category.id;
+    }
 
     const bd = new Date(v.booking_date);
     const today = new Date();
@@ -147,14 +164,15 @@ export default async function bookingRoutes(fastify) {
       data: {
         clientId: client.id,
         providerId: null,
-        serviceId: service.id,
+        serviceId: service?.id ?? null,
+        categoryId,
         trackingToken: randomBytes(16).toString('hex'),
         lat: coords?.lat ?? null,
         lng: coords?.lng ?? null,
         status: BS.EN_ATTENTE_ADMIN,
         bookingDate: bd,
         bookingTime: parseBookingTime(v.booking_time),
-        totalPrice: service.price,
+        totalPrice: service?.price ?? null,
         notes: v.notes ?? null,
         location: v.location ?? client.address,
         description: v.description ?? null,
@@ -166,16 +184,16 @@ export default async function bookingRoutes(fastify) {
     await notifyAdmins(
       'booking',
       isGuest ? 'Demande rapide (sans compte)' : 'Nouvelle demande de service',
-      `${client.name}${contact} a fait une demande pour « ${booking.service.title} ».`,
+      `${client.name}${contact} a fait une demande pour « ${bookingLabel(booking)} ».`,
       bookingDetailPath(booking.id),
     );
 
     // Suivi automatique par WhatsApp (si l'API Meta est configurée).
     await sendWhatsApp(
       client.phone,
-      `Bonjour ${client.name},\n\nVotre demande NAFISSA n°${booking.id} — « ${booking.service.title} » a bien été reçue. Notre équipe sélectionne le meilleur prestataire disponible près de chez vous.\n\nSuivez-la en temps réel : ${trackingLink(booking.trackingToken)}\n\n— L'équipe NAFISSA`,
+      `Bonjour ${client.name},\n\nVotre demande NAFISSA n°${booking.id} — « ${bookingLabel(booking)} » a bien été reçue. Notre équipe sélectionne le meilleur prestataire disponible près de chez vous.\n\nSuivez-la en temps réel : ${trackingLink(booking.trackingToken)}\n\n— L'équipe NAFISSA`,
       request.log,
-      waParams(client.name, booking, `« ${booking.service.title} » a bien été reçue. Notre équipe sélectionne le meilleur prestataire disponible près de chez vous.`),
+      waParams(client.name, booking, `« ${bookingLabel(booking)} » a bien été reçue. Notre équipe sélectionne le meilleur prestataire disponible près de chez vous.`),
     );
 
     return reply.code(201).send({
@@ -261,21 +279,21 @@ export default async function bookingRoutes(fastify) {
       await notifyAdmins(
         'booking',
         'Prestataire a refusé la mission',
-        `Le prestataire a refusé la mission pour « ${updated.service.title} ». Veuillez attribuer un autre prestataire.`,
+        `Le prestataire a refusé la mission pour « ${bookingLabel(updated)} ». Veuillez attribuer un autre prestataire.`,
         link,
       );
       await notify(
         updated.clientId,
         'booking',
         'Nous cherchons un autre prestataire',
-        `Le prestataire choisi pour « ${updated.service.title} » n'est pas disponible. Notre équipe vous attribue un autre prestataire.`,
+        `Le prestataire choisi pour « ${bookingLabel(updated)} » n'est pas disponible. Notre équipe vous attribue un autre prestataire.`,
         link,
       );
       await sendWhatsApp(
         updated.client?.phone,
-        `Bonjour${updated.client?.name ? ` ${updated.client.name}` : ''},\n\nLe prestataire choisi pour votre demande NAFISSA n°${updated.id} — « ${updated.service.title} » n'est pas disponible. Notre équipe vous attribue un autre prestataire.\n\nSuivi : ${trackingLink(updated.trackingToken)}\n\n— L'équipe NAFISSA`,
+        `Bonjour${updated.client?.name ? ` ${updated.client.name}` : ''},\n\nLe prestataire choisi pour votre demande NAFISSA n°${updated.id} — « ${bookingLabel(updated)} » n'est pas disponible. Notre équipe vous attribue un autre prestataire.\n\nSuivi : ${trackingLink(updated.trackingToken)}\n\n— L'équipe NAFISSA`,
         request.log,
-        waParams(updated.client?.name, updated, `« ${updated.service.title} » — le prestataire choisi n'est pas disponible. Notre équipe vous attribue un autre prestataire.`),
+        waParams(updated.client?.name, updated, `« ${bookingLabel(updated)} » — le prestataire choisi n'est pas disponible. Notre équipe vous attribue un autre prestataire.`),
       );
       return {
         message: `Mission refusée. L'administrateur va attribuer un autre prestataire.`,
@@ -344,7 +362,7 @@ export default async function bookingRoutes(fastify) {
           provider.id,
           'booking',
           'Nouvelle évaluation reçue',
-          `${request.user.name} vous a attribué ${rating}/5 pour « ${booking.service.title} ».`,
+          `${request.user.name} vous a attribué ${rating}/5 pour « ${bookingLabel(booking)} ».`,
           bookingDetailPath(booking.id),
         );
       }
@@ -386,7 +404,7 @@ export default async function bookingRoutes(fastify) {
     }
 
     const reason = parsed.data.reason?.trim() || 'Problème signalé';
-    const serviceName = booking.service?.title || 'Service';
+    const serviceName = bookingLabel(booking);
     const link = bookingDetailPath(booking.id);
 
     await notifyAdmins(
@@ -408,7 +426,7 @@ export default async function bookingRoutes(fastify) {
 }
 
 async function sendStatusNotifications(booking, newStatus) {
-  const serviceName = booking.service?.title || 'Service';
+  const serviceName = bookingLabel(booking);
   const path = bookingDetailPath(booking.id);
   const messages = {
     [BS.ACCEPTEE]: {

@@ -94,6 +94,7 @@ export default function Home() {
             <a href="#services" className="hover:text-primary transition-colors">Services</a>
             <a href="#how" className="hover:text-primary transition-colors">Comment ça marche</a>
             <a href="#contact" className="hover:text-primary transition-colors">Contact</a>
+            <Link to="/demande" className="text-primary font-bold hover:text-primary-dark transition-colors">Faire une demande</Link>
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden md:flex">
@@ -132,6 +133,7 @@ export default function Home() {
               <a href="#services" onClick={closeMenu} className="rounded-xl px-3 py-3 hover:bg-gray-50 hover:text-primary transition-colors">Services</a>
               <a href="#how" onClick={closeMenu} className="rounded-xl px-3 py-3 hover:bg-gray-50 hover:text-primary transition-colors">Comment ça marche</a>
               <a href="#contact" onClick={closeMenu} className="rounded-xl px-3 py-3 hover:bg-gray-50 hover:text-primary transition-colors">Contact</a>
+              <Link to="/demande" onClick={closeMenu} className="rounded-xl px-3 py-3 font-bold text-primary hover:bg-primary/5 transition-colors">Faire une demande</Link>
               {!user && (
                 <>
                   <Link to="/login" onClick={closeMenu} className="rounded-xl px-3 py-3 text-primary hover:bg-primary/5 transition-colors">
@@ -185,8 +187,8 @@ export default function Home() {
 
               {/* CTA Buttons */}
               <div className="mt-9 flex flex-col sm:flex-row items-center lg:items-start lg:justify-start justify-center gap-4">
-                <Link to="/services" className="w-full sm:w-auto group inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white px-8 py-4 rounded-2xl text-base font-bold transition-all shadow-2xl shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-0.5 active:translate-y-0">
-                  Trouver un prestataire <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                <Link to="/demande" className="w-full sm:w-auto group inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white px-8 py-4 rounded-2xl text-base font-bold transition-all shadow-2xl shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-0.5 active:translate-y-0">
+                  Faire une demande <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link to="/register" className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-secondary/10 hover:bg-secondary/15 text-secondary px-8 py-4 rounded-2xl text-base font-bold transition-all border border-secondary/20 hover:border-secondary/40">
                   <Play size={16} fill="currentColor" /> Devenir prestataire

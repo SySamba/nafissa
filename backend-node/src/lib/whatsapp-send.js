@@ -117,7 +117,7 @@ const STATUS_LABELS = {
 /** Phrase de détail pour le template/message de suivi. */
 export function waDetail(booking) {
   const label = STATUS_LABELS[booking.status] || booking.status;
-  return `« ${booking.service?.title || 'service'} » est ${label}`;
+  return `« ${booking.service?.title || booking.category?.name || 'service'} » est ${label}`;
 }
 
 /** Message de suivi envoyé à la cliente à chaque changement de statut. */
