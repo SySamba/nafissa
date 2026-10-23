@@ -138,6 +138,48 @@ export default async function paymentRoutes(fastify) {
     };
   });
 
+  /** Remboursement admin (litige tranché en faveur de la cliente). */
+  fastify.patch('/payments/:id/refund', { preHandler: authMiddleware }, async (request, reply) => {
+    if (request.user.role !== 'admin') {
+      return reply.code(403).send({ message: 'Réservé à l\'administration.' });
+    }
+    const id = BigInt(request.params.id);
+    const payment = await prisma.payment.findUnique({
+      where: { id },
+      include: { booking: { include: { service: true, category: true } } },
+    });
+    if (!payment) return reply.code(404).send({ message: 'Non trouvé.' });
+    if (payment.escrowStatus !== ES.HELD) {
+      return reply.code(422).send({ message: 'Seul un paiement séquestré peut être remboursé.' });
+    }
+
+    const updated = await prisma.payment.update({
+      where: { id },
+      data: { escrowStatus: ES.REFUNDED, status: PS.REFUNDED },
+      include: { booking: { include: { service: true, category: true } } },
+    });
+
+    const label = bookingLabel(payment.booking);
+    await notify(
+      payment.booking.clientId,
+      'payment',
+      'Paiement remboursé',
+      `Le paiement de ${Number(payment.amount).toLocaleString('fr-FR')} FCFA pour « ${label} » vous est remboursé.`,
+      bookingDetailPath(payment.booking.id),
+    );
+    if (payment.booking.providerId) {
+      await notify(
+        payment.booking.providerId,
+        'payment',
+        'Mission remboursée',
+        `Le paiement pour « ${label} » a été remboursé à la cliente par l'administration.`,
+        bookingDetailPath(payment.booking.id),
+      );
+    }
+
+    return { message: 'Paiement remboursé à la cliente.', payment: updated };
+  });
+
   fastify.get('/payments/history', { preHandler: authMiddleware }, async (request) => {
     const user = request.user;
     const page = Number(request.query?.page) || 1;

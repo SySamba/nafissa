@@ -1,7 +1,7 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { authAPI } from '../api/services';
-import { User, Mail, Phone, MapPin, FileText, Check, ArrowLeft, Lock, Eye, EyeOff, ShieldCheck, Camera } from 'lucide-react';
+import { authAPI, bookingAPI } from '../api/services';
+import { User, Mail, Phone, MapPin, FileText, Check, ArrowLeft, Lock, Eye, EyeOff, ShieldCheck, Camera, Star, Trash2, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ROLE_LABELS = {
@@ -12,8 +12,33 @@ const ROLE_LABELS = {
 };
 
 export default function Profile() {
-  const { user, loadUser } = useAuth();
+  const { user, loadUser, logout, isPrestataire } = useAuth();
   const navigate = useNavigate();
+  const [reviews, setReviews] = useState(null);
+  const [deletePwd, setDeletePwd] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  useEffect(() => {
+    if (isPrestataire) {
+      bookingAPI.myReviews().then(({ data }) => setReviews(data.reviews || [])).catch(() => setReviews([]));
+    }
+  }, [isPrestataire]);
+
+  const handleDeleteAccount = async (e) => {
+    e.preventDefault();
+    setDeleteLoading(true);
+    setDeleteError('');
+    try {
+      await authAPI.deleteAccount(deletePwd);
+      await logout();
+      navigate('/');
+    } catch (err) {
+      setDeleteError(err.response?.data?.message || 'Erreur lors de la suppression.');
+      setDeleteLoading(false);
+    }
+  };
   const [form, setForm] = useState({
     name: user?.name || '',
     phone: user?.phone || '',
@@ -243,6 +268,87 @@ export default function Profile() {
             {pwdLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Changer le mot de passe'}
           </button>
         </form>
+      </div>
+
+      {/* Avis des clientes — prestataire uniquement */}
+      {isPrestataire && reviews && (
+        <div className="bg-surface rounded-2xl border border-gray-100 p-6 sm:p-8">
+          <div className="flex items-center gap-3 mb-5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+              <Star size={20} />
+            </span>
+            <div>
+              <h2 className="font-bold text-gray-900">Mes avis</h2>
+              <p className="text-sm text-muted">
+                {reviews.length ? `${reviews.length} avis de clientes après vos missions.` : 'Vos avis clientes apparaîtront ici après vos missions.'}
+              </p>
+            </div>
+          </div>
+          {reviews.length > 0 && (
+            <ul className="space-y-3">
+              {reviews.map((r) => (
+                <li key={r.id} className="rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star key={s} size={14} className={s <= Math.round(r.rating) ? 'text-amber-400 fill-amber-400' : 'text-gray-200'} />
+                      ))}
+                    </div>
+                    <span className="text-xs text-gray-400">{new Date(r.date).toLocaleDateString('fr-FR')}</span>
+                  </div>
+                  <p className="mt-1 text-xs font-semibold text-gray-700">{r.service} · {r.client}</p>
+                  {r.review && <p className="mt-1.5 text-sm leading-relaxed text-gray-600">{r.review}</p>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {/* Suppression du compte */}
+      <div className="bg-surface rounded-2xl border border-red-100 p-6 sm:p-8">
+        <div className="flex items-center gap-3 mb-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-danger">
+            <Trash2 size={20} />
+          </span>
+          <div>
+            <h2 className="font-bold text-gray-900">Supprimer mon compte</h2>
+            <p className="text-sm text-muted">Vos données personnelles seront anonymisées. Action irréversible.</p>
+          </div>
+        </div>
+        {!deleteOpen ? (
+          <button type="button" onClick={() => setDeleteOpen(true)}
+            className="mt-2 text-sm font-bold text-danger hover:text-red-700">
+            Je veux supprimer mon compte
+          </button>
+        ) : (
+          <form onSubmit={handleDeleteAccount} className="mt-4 space-y-3">
+            <div className="flex items-start gap-2 rounded-lg bg-red-50 p-3 text-xs text-red-800">
+              <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+              Votre nom, photo, téléphone et adresse seront effacés. L&apos;historique des missions est conservé de façon anonyme.
+            </div>
+            {deleteError && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-danger">{deleteError}</p>}
+            <input
+              type="password"
+              required
+              autoComplete="current-password"
+              placeholder="Confirmez avec votre mot de passe"
+              value={deletePwd}
+              onChange={(e) => setDeletePwd(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-danger focus:outline-none focus:ring-2 focus:ring-red-100"
+            />
+            <div className="flex gap-3">
+              <button type="button" onClick={() => { setDeleteOpen(false); setDeletePwd(''); setDeleteError(''); }}
+                className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50">
+                Annuler
+              </button>
+              <button type="submit" disabled={deleteLoading || !deletePwd}
+                className="flex-1 rounded-xl bg-danger py-2.5 text-sm font-bold text-white transition hover:bg-red-600 disabled:opacity-50">
+                {deleteLoading ? 'Suppression…' : 'Supprimer définitivement'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
       {/* Informations du compte */}

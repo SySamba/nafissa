@@ -223,6 +223,18 @@ export default async function bookingRoutes(fastify) {
 
     const where = isAdmin(user.role) ? {} : roleWhere;
 
+    // Filtres côté serveur : ?status=<statut> ou ?vue=reservations
+    // (réservations = demandes déjà prises en charge par un prestataire).
+    const vue = String(request.query?.vue || '');
+    const statusQ = String(request.query?.status || '');
+    if (statusQ && Object.values(BS).includes(statusQ)) {
+      where.status = statusQ;
+    } else if (vue === 'reservations') {
+      where.status = {
+        in: [BS.ACCEPTEE, BS.PAYEE, BS.EN_COURS, BS.TERMINEE, BS.REFUSEE, BS.ANNULEE],
+      };
+    }
+
     const [total, rows] = await prisma.$transaction([
       prisma.booking.count({ where }),
       prisma.booking.findMany({
@@ -377,6 +389,33 @@ export default async function bookingRoutes(fastify) {
       message: 'Merci pour votre évaluation !',
       booking: bookingForViewer(updated, request.user),
     });
+  });
+
+  /** Avis reçus par le prestataire connecté (missions notées). */
+  fastify.get('/my/reviews', { preHandler: authMiddleware }, async (request, reply) => {
+    if (!isPrestataire(request.user.role)) {
+      return reply.code(403).send({ message: 'Réservé aux prestataires.' });
+    }
+    const rows = await prisma.booking.findMany({
+      where: { providerId: request.user.id, rating: { not: null } },
+      include: {
+        service: true,
+        category: true,
+        client: { select: { id: true, name: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 50,
+    });
+    return {
+      reviews: rows.map((b) => ({
+        id: b.id,
+        rating: b.rating,
+        review: b.review,
+        date: b.updatedAt,
+        service: bookingLabel(b),
+        client: b.client?.name?.split(' ')[0] || 'Cliente',
+      })),
+    };
   });
 
   /** Signaler un problème (litige) sur une réservation. */

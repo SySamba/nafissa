@@ -10,6 +10,7 @@ import {
   hashSanctumSecret,
 } from '../lib/sanctum.js';
 import { TOKENABLE_TYPE } from '../lib/auth-resolve.js';
+import { sendWhatsApp } from '../lib/whatsapp-send.js';
 import { notify } from '../lib/notifications.js';
 import { stripUser, userWithProfile } from '../lib/serializers.js';
 import { authMiddleware } from '../middleware/auth.js';
@@ -525,5 +526,109 @@ export default async function authRoutes(fastify) {
     );
 
     return reply.send({ message: 'Mot de passe mis à jour avec succès.' });
+  });
+
+  /** Mot de passe oublié : envoi d'un lien de réinitialisation par WhatsApp. */
+  fastify.post('/auth/forgot-password', {
+    config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+  }, async (request) => {
+    const schema = z.object({ phone: z.string().min(4).max(30) });
+    const parsed = schema.safeParse(request.body || {});
+    if (!parsed.success) {
+      return { message: 'Si un compte correspond à ce numéro, un lien de réinitialisation a été envoyé par WhatsApp.' };
+    }
+    const phone = parsed.data.phone.trim();
+    const normalized = normalizePhone(phone) || phone;
+    const user = await prisma.user.findFirst({
+      where: { OR: collectPhoneVariants(normalized).map((p) => ({ phone: p })) },
+    });
+    if (user?.phone) {
+      const plain = randomBytes(24).toString('hex');
+      await prisma.personalAccessToken.create({
+        data: {
+          tokenableType: TOKENABLE_TYPE,
+          tokenableId: user.id,
+          name: 'password_reset',
+          token: hashSanctumSecret(plain),
+          expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        },
+      });
+      const base = (process.env.APP_PUBLIC_URL || process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+      await sendWhatsApp(
+        user.phone,
+        `NAFISSA — Réinitialisation de votre mot de passe (valable 30 min) : ${base}/reinitialiser/${plain}`,
+      );
+    }
+    return { message: 'Si un compte correspond à ce numéro, un lien de réinitialisation a été envoyé par WhatsApp.' };
+  });
+
+  /** Réinitialisation via le jeton reçu par WhatsApp. */
+  fastify.post('/auth/reset-password', {
+    config: { rateLimit: { max: 5, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
+    const schema = z.object({
+      token: z.string().min(20).max(100),
+      password: z.string().min(8),
+      password_confirmation: z.string(),
+    });
+    const parsed = schema.safeParse(request.body || {});
+    if (!parsed.success) return reply.code(422).send({ message: 'Données invalides.' });
+    const { token, password, password_confirmation } = parsed.data;
+    if (password !== password_confirmation) {
+      return reply.code(422).send({ message: 'La confirmation du mot de passe ne correspond pas.' });
+    }
+
+    const row = await prisma.personalAccessToken.findFirst({
+      where: { token: hashSanctumSecret(token), name: 'password_reset' },
+    });
+    if (!row || (row.expiresAt && row.expiresAt < new Date())) {
+      return reply.code(422).send({ message: 'Ce lien est expiré ou invalide. Refaites une demande.' });
+    }
+
+    const hashed = await bcrypt.hash(password, 12);
+    await prisma.user.update({ where: { id: row.tokenableId }, data: { password: hashed } });
+    await prisma.personalAccessToken.deleteMany({
+      where: { tokenableId: row.tokenableId, name: 'password_reset' },
+    });
+
+    return { message: 'Mot de passe réinitialisé. Vous pouvez vous connecter.' };
+  });
+
+  /** Suppression de compte : anonymisation (l'historique des missions est conservé). */
+  fastify.delete('/auth/account', { preHandler: authMiddleware }, async (request, reply) => {
+    const schema = z.object({ password: z.string().min(1) });
+    const parsed = schema.safeParse(request.body || {});
+    if (!parsed.success) return reply.code(422).send({ message: 'Mot de passe requis.' });
+
+    const user = await prisma.user.findUnique({ where: { id: request.user.id } });
+    if (!user || !(await bcrypt.compare(parsed.data.password, user.password))) {
+      return reply.code(422).send({ message: 'Mot de passe incorrect.' });
+    }
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: user.id },
+        data: {
+          name: 'Compte supprimé',
+          email: `supprime-${String(user.id)}@supprime.nafissa.local`,
+          phone: null,
+          photo: null,
+          address: null,
+          lat: null,
+          lng: null,
+          isAvailable: false,
+          password: await bcrypt.hash(randomBytes(16).toString('hex'), 12),
+        },
+      }),
+      prisma.profile.updateMany({
+        where: { userId: user.id },
+        data: { status: 'suspended', bio: null, location: null, avatar: null },
+      }),
+      prisma.personalAccessToken.deleteMany({
+        where: { tokenableType: TOKENABLE_TYPE, tokenableId: user.id },
+      }),
+    ]);
+
+    return { message: 'Votre compte a été supprimé.' };
   });
 }

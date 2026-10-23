@@ -18,27 +18,31 @@ export default function Bookings() {
 
   const fetchBookings = useCallback(() => {
     setLoading(true);
-    bookingAPI.list({ page })
+    // Filtrage côté serveur : toutes les pages sont couvertes, pas seulement
+    // la page actuellement chargée.
+    const params = { page };
+    if (statusFilter) params.status = statusFilter;
+    else if (onlyReservations) params.vue = 'reservations';
+    bookingAPI.list(params)
       .then(({ data }) => {
         setBookings(data.data || []);
         setLastPage(data.last_page || 1);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [page]);
+  }, [page, statusFilter, onlyReservations]);
+
+  // Changement de filtre → retour à la première page.
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, onlyReservations]);
 
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
-  usePolling(fetchBookings, 15000, [page]);
+  usePolling(fetchBookings, 15000, [page, statusFilter, onlyReservations]);
 
-  // « Réservations » = demandes déjà prises en charge (prestataire attribué),
-  // confirmées, passées ou annulées. Les demandes encore en file d'attribution
-  // restent dans « Mes demandes ».
-  const RESERVATION_STATUSES = ['acceptee', 'payee', 'en_cours', 'terminee', 'refusee', 'annulee'];
-  const filteredBookings = bookings
-    .filter((b) => (onlyReservations ? RESERVATION_STATUSES.includes(b.status) : true))
-    .filter((b) => (statusFilter ? b.status === statusFilter : true));
+  const filteredBookings = bookings;
 
   return (
     <div className="space-y-6">

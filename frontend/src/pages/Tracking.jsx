@@ -5,8 +5,86 @@ import usePolling from '../hooks/usePolling';
 import BrandMark from '../components/BrandMark';
 import { statusConfig } from '../lib/bookingStatus';
 import {
-  Calendar, Clock, MapPin, Check, AlertCircle, CreditCard, User,
+  Calendar, Clock, MapPin, Check, AlertCircle, CreditCard, User, KeyRound, CheckCircle,
 } from 'lucide-react';
+
+/** Bloc « créer mon accès » : la cliente définit un mot de passe grâce au lien de suivi. */
+function SetPasswordCard({ token }) {
+  const [form, setForm] = useState({ password: '', password_confirmation: '' });
+  const [saving, setSaving] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSaving(true);
+    try {
+      await trackingAPI.setPassword(token, form);
+      setDone(true);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Impossible de définir le mot de passe.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-center">
+        <CheckCircle size={32} className="mx-auto mb-2 text-emerald-500" />
+        <p className="text-sm font-semibold text-gray-800">
+          Mot de passe créé ! Connectez-vous avec votre numéro de téléphone.
+        </p>
+        <Link to="/login" className="mt-3 inline-block rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark">
+          Se connecter
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-gray-100 bg-surface p-5">
+      <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+        <KeyRound size={16} className="text-primary" /> Créer mon accès
+      </h2>
+      <p className="mt-1 text-xs leading-relaxed text-muted">
+        Choisissez un mot de passe pour retrouver toutes vos demandes dans votre espace
+        (connexion avec votre numéro de téléphone).
+      </p>
+      <form onSubmit={submit} className="mt-4 space-y-3">
+        {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-danger">{error}</p>}
+        <input
+          type="password"
+          required
+          minLength={8}
+          autoComplete="new-password"
+          placeholder="Mot de passe (8 caractères min.)"
+          value={form.password}
+          onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+          className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+        />
+        <input
+          type="password"
+          required
+          minLength={8}
+          autoComplete="new-password"
+          placeholder="Confirmer le mot de passe"
+          value={form.password_confirmation}
+          onChange={(e) => setForm((p) => ({ ...p, password_confirmation: e.target.value }))}
+          className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+        />
+        <button
+          type="submit"
+          disabled={saving}
+          className="w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
+        >
+          {saving ? 'Enregistrement…' : 'Créer mon mot de passe'}
+        </button>
+      </form>
+    </div>
+  );
+}
 
 const STEPS = [
   { key: 'en_attente_admin', label: 'Demande reçue' },
@@ -141,10 +219,12 @@ export default function Tracking() {
           </p>
         )}
 
+        <SetPasswordCard token={token} />
+
         <div className="rounded-2xl border border-gray-100 bg-surface p-5 text-center">
           <p className="text-sm text-muted">Besoin d'un autre service ?</p>
-          <Link to="/services" className="mt-2 inline-block rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark">
-            Voir le catalogue
+          <Link to="/demande" className="mt-2 inline-block rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark">
+            Faire une nouvelle demande
           </Link>
         </div>
       </main>

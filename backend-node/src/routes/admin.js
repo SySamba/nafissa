@@ -265,7 +265,10 @@ export default async function adminRoutes(fastify) {
   });
 
   fastify.patch('/admin/bookings/:id/assign', { preHandler: pre }, async (request, reply) => {
-    const schema = z.object({ provider_id: z.coerce.bigint() });
+    const schema = z.object({
+      provider_id: z.coerce.bigint(),
+      total_price: z.coerce.number().min(0).optional(),
+    });
     const parsed = schema.safeParse(request.body || {});
     if (!parsed.success) return reply.code(422).send({ message: 'provider_id requis.' });
     const bookingId = BigInt(request.params.id);
@@ -309,6 +312,11 @@ export default async function adminRoutes(fastify) {
           if (booking.totalPrice == null) data.totalPrice = linkedService.price;
         }
       }
+    }
+    // Le prix saisi par l'admin (montant confirmé selon le besoin réel)
+    // prime sur le prix indicatif de l'offre.
+    if (parsed.data.total_price !== undefined) {
+      data.totalPrice = parsed.data.total_price;
     }
 
     const updated = await prisma.booking.update({
@@ -470,5 +478,66 @@ export default async function adminRoutes(fastify) {
 
     const fresh = await userWithProfile(id);
     return { message: 'Utilisateur suspendu.', user: stripUser(fresh) };
+  });
+
+  /** Litiges signalés : notifications 'dispute' de l'admin + état de la demande. */
+  fastify.get('/admin/disputes', { preHandler: pre }, async (request) => {
+    const rows = await prisma.notificationRow.findMany({
+      where: { userId: request.user.id, type: 'dispute' },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    });
+
+    const bookingIdOf = (n) => /^\/bookings\/(\d+)/.exec(n.actionLink || '')?.[1] ?? null;
+    const bookingIds = rows.map(bookingIdOf).filter(Boolean).map(BigInt);
+    const bookings = bookingIds.length
+      ? await prisma.booking.findMany({
+          where: { id: { in: bookingIds } },
+          include: {
+            client: { select: { id: true, name: true } },
+            provider: { select: { id: true, name: true } },
+            payment: true,
+            service: true,
+            category: true,
+          },
+        })
+      : [];
+    const byId = new Map(bookings.map((b) => [String(b.id), b]));
+
+    return {
+      disputes: rows.map((n) => {
+        const bid = bookingIdOf(n);
+        const b = bid ? byId.get(bid) : null;
+        return {
+          id: n.id,
+          title: n.title,
+          message: n.message,
+          date: n.createdAt,
+          traite: n.isRead,
+          booking: b
+            ? {
+                id: b.id,
+                status: b.status,
+                service: bookingLabel(b),
+                client: b.client?.name ?? null,
+                provider: b.provider?.name ?? null,
+                paiement: b.payment
+                  ? { id: b.payment.id, montant: b.payment.amount, escrow: b.payment.escrowStatus, statut: b.payment.status }
+                  : null,
+              }
+            : null,
+        };
+      }),
+    };
+  });
+
+  /** Marquer un litige comme traité. */
+  fastify.patch('/admin/disputes/:id/resolve', { preHandler: pre }, async (request, reply) => {
+    const row = await prisma.notificationRow.findUnique({ where: { id: BigInt(request.params.id) } });
+    if (!row || row.userId !== request.user.id || row.type !== 'dispute') {
+      return reply.code(404).send({ message: 'Litige introuvable.' });
+    }
+    await prisma.notificationRow.update({ where: { id: row.id }, data: { isRead: true } });
+    return { message: 'Litige marqué comme traité.' };
   });
 }

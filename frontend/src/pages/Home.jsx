@@ -426,6 +426,11 @@ export default function Home() {
           {/* Bottom bar */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
             <p>&copy; {new Date().getFullYear()} Nafissa. Tous droits réservés.</p>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+              <Link to="/cgu" className="hover:text-white transition-colors">CGU</Link>
+              <Link to="/confidentialite" className="hover:text-white transition-colors">Confidentialité</Link>
+              <Link to="/mentions-legales" className="hover:text-white transition-colors">Mentions légales</Link>
+            </div>
             <div className="flex items-center gap-2">
               <Shield size={14} className="text-secondary" />
               <span>Paiements sécurisés &bull; Données protégées</span>

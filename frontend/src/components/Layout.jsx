@@ -78,6 +78,7 @@ export default function Layout({ children }) {
         { to: '/bookings?vue=reservations', label: 'Mes réservations', desc: 'Interventions confirmées, passées ou annulées.', icon: CheckCircle },
         { to: '/payments', label: 'Mes paiements', desc: 'Montants, statuts de paiement et reçus disponibles.', icon: CreditCard },
         ...common,
+        { href: '/#contact', label: 'Aide et assistance', desc: 'Contacter l\'équipe Nafissa.', icon: LifeBuoy },
       ];
     }
     if (isAdmin) {

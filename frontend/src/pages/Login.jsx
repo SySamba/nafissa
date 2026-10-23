@@ -114,6 +114,11 @@ export default function Login() {
           <p className="mt-2 text-xs text-gray-400">
             Cliquez sur l&apos;œil pour afficher ou masquer le mot de passe.
           </p>
+          <div className="mt-2 text-right">
+            <Link to="/mot-de-passe-oublie" className="text-xs font-bold text-primary hover:text-primary-dark">
+              Mot de passe oublié ?
+            </Link>
+          </div>
         </div>
 
         <button

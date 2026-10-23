@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
@@ -21,6 +21,11 @@ const ServiceEdit = lazy(() => import('./pages/ServiceEdit'));
 const Tracking = lazy(() => import('./pages/Tracking'));
 const Demande = lazy(() => import('./pages/Demande'));
 const Planning = lazy(() => import('./pages/Planning'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Legal = lazy(() => import('./pages/Legal'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+import ErrorBoundary from './components/ErrorBoundary';
 
 const pageFallback = (
   <div className="min-h-[40vh] flex items-center justify-center text-muted text-sm">
@@ -37,6 +42,11 @@ function AppRoutes() {
         <Route path="/register" element={<Register />} />
         <Route path="/suivi/:token" element={<Tracking />} />
         <Route path="/demande" element={<Demande />} />
+        <Route path="/mot-de-passe-oublie" element={<ForgotPassword />} />
+        <Route path="/reinitialiser/:token" element={<ResetPassword />} />
+        <Route path="/cgu" element={<Legal page="cgu" />} />
+        <Route path="/confidentialite" element={<Legal page="confidentialite" />} />
+        <Route path="/mentions-legales" element={<Legal page="mentions-legales" />} />
 
         <Route path="/dashboard" element={
           <ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>
@@ -75,7 +85,7 @@ function AppRoutes() {
           <ProtectedRoute adminOnly><Layout><Admin /></Layout></ProtectedRoute>
         } />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
   );
@@ -85,7 +95,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <ErrorBoundary>
+          <AppRoutes />
+        </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
   );

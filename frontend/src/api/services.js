@@ -10,6 +10,9 @@ export const authAPI = {
   updateProfile: (data) => apiClient.put('/auth/profile', data, {
     headers: data instanceof FormData ? { 'Content-Type': 'multipart/form-data' } : {},
   }),
+  forgotPassword: (phone) => apiClient.post('/auth/forgot-password', { phone }),
+  resetPassword: (data) => apiClient.post('/auth/reset-password', data),
+  deleteAccount: (password) => apiClient.delete('/auth/account', { data: { password } }),
 };
 
 export const serviceAPI = {
@@ -38,16 +41,19 @@ export const bookingAPI = {
   updateStatus: (id, status) => apiClient.patch(`/bookings/${id}/status`, { status }),
   rate: (id, data) => apiClient.post(`/bookings/${id}/rate`, data),
   dispute: (id, data) => apiClient.post(`/bookings/${id}/dispute`, data),
+  myReviews: () => apiClient.get('/my/reviews'),
 };
 
 export const paymentAPI = {
   create: (data) => apiClient.post('/payments', data),
   release: (id) => apiClient.patch(`/payments/${id}/release`),
+  refund: (id) => apiClient.patch(`/payments/${id}/refund`),
   history: (params) => apiClient.get('/payments/history', { params }),
 };
 
 export const trackingAPI = {
   show: (token) => apiClient.get(`/suivi/${token}`),
+  setPassword: (token, data) => apiClient.post(`/suivi/${token}/password`, data),
 };
 
 export const notificationAPI = {
@@ -62,7 +68,12 @@ export const adminAPI = {
   // Gestion des demandes (nouveau workflow)
   pendingBookings: () => apiClient.get('/admin/bookings/pending'),
   suggestProviders: (bookingId) => apiClient.get(`/admin/bookings/${bookingId}/providers`),
-  assignProvider: (bookingId, providerId) => apiClient.patch(`/admin/bookings/${bookingId}/assign`, { provider_id: providerId }),
+  assignProvider: (bookingId, providerId, totalPrice) => apiClient.patch(`/admin/bookings/${bookingId}/assign`, {
+    provider_id: providerId,
+    ...(totalPrice !== undefined && totalPrice !== null && totalPrice !== '' ? { total_price: Number(totalPrice) } : {}),
+  }),
+  disputes: () => apiClient.get('/admin/disputes'),
+  resolveDispute: (id) => apiClient.patch(`/admin/disputes/${id}/resolve`),
   // Gestion des comptes
   users: (params) => apiClient.get('/admin/users', { params }),
   pendingUsers: (params) => apiClient.get('/admin/users/pending', { params }),

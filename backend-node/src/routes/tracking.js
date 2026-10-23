@@ -1,3 +1,5 @@
+import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 import { prisma } from '../lib/prisma.js';
 
 /**
@@ -41,5 +43,43 @@ export default async function trackingRoutes(fastify) {
           : null,
       },
     };
+  });
+
+  /**
+   * La cliente ayant reçu le lien de suivi (WhatsApp) peut définir un mot de
+   * passe pour se connecter ensuite avec son numéro de téléphone. Le jeton de
+   * suivi (128 bits) tient lieu de vérification d'identité.
+   */
+  fastify.post('/suivi/:token/password', {
+    config: { rateLimit: { max: 10, timeWindow: '1 minute' } },
+  }, async (request, reply) => {
+    const token = String(request.params.token || '');
+    if (!/^[a-f0-9]{32}$/.test(token)) {
+      return reply.code(404).send({ message: 'Demande introuvable.' });
+    }
+    const schema = z.object({
+      password: z.string().min(8).max(100),
+      password_confirmation: z.string(),
+    });
+    const parsed = schema.safeParse(request.body || {});
+    if (!parsed.success) {
+      return reply.code(422).send({ message: 'Choisissez un mot de passe d\'au moins 8 caractères.' });
+    }
+    if (parsed.data.password !== parsed.data.password_confirmation) {
+      return reply.code(422).send({ message: 'La confirmation ne correspond pas.' });
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { trackingToken: token },
+      select: { clientId: true },
+    });
+    if (!booking) return reply.code(404).send({ message: 'Demande introuvable.' });
+
+    await prisma.user.update({
+      where: { id: booking.clientId },
+      data: { password: await bcrypt.hash(parsed.data.password, 12) },
+    });
+
+    return { message: 'Mot de passe défini. Connectez-vous avec votre numéro de téléphone.' };
   });
 }

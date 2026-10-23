@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { adminAPI } from '../api/services';
+import { adminAPI, paymentAPI } from '../api/services';
+import { Link } from 'react-router-dom';
 import usePolling from '../hooks/usePolling';
 import ProviderDossierModal from '../components/ProviderDossierModal';
 import { whatsappTrackingLink } from '../lib/whatsapp';
@@ -24,6 +25,8 @@ export default function Admin() {
   const [expandedBooking, setExpandedBooking] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [dossier, setDossier] = useState(null);
+  const [assignPrices, setAssignPrices] = useState({});
+  const [disputes, setDisputes] = useState([]);
 
   const fetchTabData = useCallback(() => {
     if (tab === 'pending') {
@@ -34,6 +37,11 @@ export default function Admin() {
     } else if (tab === 'users') {
       adminAPI.users()
         .then(({ data }) => setAllUsers(data.data || []))
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    } else if (tab === 'disputes') {
+      adminAPI.disputes()
+        .then(({ data }) => setDisputes(data.disputes || []))
         .catch(() => {})
         .finally(() => setLoading(false));
     } else if (tab === 'bookings') {
@@ -107,6 +115,35 @@ export default function Admin() {
     }
   };
 
+  const handleResolveDispute = async (id) => {
+    setActionLoading(`resolve-${id}`);
+    try {
+      await adminAPI.resolveDispute(id);
+      setDisputes((prev) => prev.map((d) => (d.id === id ? { ...d, traite: true } : d)));
+      setMessage({ type: 'success', text: 'Litige marqué comme traité.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Erreur.' });
+    } finally {
+      setActionLoading('');
+    }
+  };
+
+  const handleRefund = async (disputeId, paymentId) => {
+    if (!window.confirm('Rembourser ce paiement à la cliente ?')) return;
+    setActionLoading(`refund-${disputeId}`);
+    try {
+      await paymentAPI.refund(paymentId);
+      setDisputes((prev) => prev.map((d) => (d.id === disputeId
+        ? { ...d, booking: { ...d.booking, paiement: { ...d.booking.paiement, escrow: 'refunded', statut: 'refunded' } } }
+        : d)));
+      setMessage({ type: 'success', text: 'Paiement remboursé à la cliente.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Erreur lors du remboursement.' });
+    } finally {
+      setActionLoading('');
+    }
+  };
+
   const bookingIdKey = (id) => String(id);
 
   const handleExpandBooking = async (bookingId) => {
@@ -119,7 +156,17 @@ export default function Admin() {
     if (!suggestedProviders[key]) {
       try {
         const { data } = await adminAPI.suggestProviders(bookingId);
-        setSuggestedProviders((prev) => ({ ...prev, [key]: data.providers || [] }));
+        const providers = data.providers || [];
+        setSuggestedProviders((prev) => ({ ...prev, [key]: providers }));
+        // Prix final pré-rempli avec le tarif indicatif de chaque prestataire.
+        setAssignPrices((prev) => {
+          const next = { ...prev };
+          for (const p of providers) {
+            const pk = `${bookingIdKey(bookingId)}-${String(p.id)}`;
+            if (next[pk] === undefined) next[pk] = p.category_price ?? '';
+          }
+          return next;
+        });
       } catch {
         setSuggestedProviders((prev) => ({ ...prev, [key]: [] }));
       }
@@ -129,7 +176,8 @@ export default function Admin() {
   const handleAssignProvider = async (bookingId, providerId) => {
     setActionLoading(`assign-${bookingId}-${providerId}`);
     try {
-      await adminAPI.assignProvider(bookingId, providerId);
+      const priceKey = `${bookingIdKey(bookingId)}-${String(providerId)}`;
+      await adminAPI.assignProvider(bookingId, providerId, assignPrices[priceKey]);
       setMessage({ type: 'success', text: 'Prestataire attribué avec succès.' });
       const idKey = String(bookingId);
       setPendingBookings((prev) => prev.filter((b) => String(b.id) !== idKey));
@@ -145,6 +193,7 @@ export default function Admin() {
     { id: 'bookings', label: 'Attribuer prestataire', icon: ClipboardList },
     { id: 'pending', label: 'Comptes', icon: UserCheck },
     { id: 'users', label: 'Utilisateurs', icon: Users },
+    { id: 'disputes', label: 'Litiges', icon: AlertTriangle },
   ];
 
   return (
@@ -244,7 +293,10 @@ export default function Admin() {
                     {/* Liste des prestataires suggérés */}
                     {expandedBooking === bookingIdKey(booking.id) && (
                       <div className="border-t border-gray-100 p-5 bg-gray-50/80">
-                        <h4 className="text-sm font-bold text-gray-700 mb-3">Prestataires disponibles pour cette catégorie</h4>
+                        <h4 className="text-sm font-bold text-gray-700 mb-1">Prestataires disponibles pour cette catégorie</h4>
+                        <p className="mb-3 text-xs text-gray-500">
+                          Le champ prix est pré-rempli par le tarif indicatif du prestataire — ajustez-le au besoin réel avant d&apos;attribuer.
+                        </p>
                         {!suggestedProviders[bookingIdKey(booking.id)] ? (
                           <div className="flex items-center justify-center py-4">
                             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -292,6 +344,20 @@ export default function Admin() {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="500"
+                                      inputMode="numeric"
+                                      aria-label={`Prix final pour ${provider.name}`}
+                                      placeholder="Prix FCFA"
+                                      value={assignPrices[`${bookingIdKey(booking.id)}-${String(provider.id)}`] ?? ''}
+                                      onChange={(e) => setAssignPrices((prev) => ({
+                                        ...prev,
+                                        [`${bookingIdKey(booking.id)}-${String(provider.id)}`]: e.target.value,
+                                      }))}
+                                      className="w-28 rounded-lg border border-gray-200 px-2.5 py-2 text-xs font-semibold focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    />
                                     <button onClick={() => setDossier({ provider, bookingId: booking.id })}
                                       className="flex items-center gap-1 border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-lg text-xs font-semibold transition-colors">
                                       <Eye size={14} /> Dossier
@@ -469,6 +535,73 @@ export default function Admin() {
                 </table>
               </div>
             </div>
+          )}
+
+          {/* Litiges signalés par les clientes/prestataires */}
+          {tab === 'disputes' && (
+            disputes.length === 0 ? (
+              <div className="text-center py-20 bg-surface rounded-2xl border border-gray-200/70">
+                <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-2xl bg-gray-100 text-gray-400 mb-4">
+                  <AlertTriangle size={28} />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900">Aucun litige</h3>
+                <p className="text-gray-500 text-sm mt-1.5">Les signalements des clientes et prestataires apparaîtront ici.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {disputes.map((d) => (
+                  <div key={d.id} className={`bg-surface rounded-2xl border border-gray-200/70 p-4 sm:p-5 ${d.traite ? 'opacity-60' : ''}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <p className="text-sm font-bold text-gray-900">{d.title}</p>
+                          {d.traite && (
+                            <span className="text-xs font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Traité</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600 leading-relaxed">{d.message}</p>
+                        {d.booking && (
+                          <p className="mt-2 text-xs text-gray-400">
+                            Demande #{d.booking.id} · {d.booking.service} · Cliente : {d.booking.client ?? '—'}
+                            {d.booking.provider ? ` · Prestataire : ${d.booking.provider}` : ''}
+                            {d.booking.paiement
+                              ? ` · Paiement ${Number(d.booking.paiement.montant).toLocaleString('fr-FR')} FCFA (${d.booking.paiement.escrow === 'held' ? 'séquestré' : d.booking.paiement.escrow === 'released' ? 'libéré' : 'remboursé'})`
+                              : ' · Pas de paiement'}
+                          </p>
+                        )}
+                        <p className="mt-1 text-xs text-gray-400">
+                          {new Date(d.date).toLocaleString('fr-FR')}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-stretch gap-2">
+                        {d.booking && (
+                          <Link to={`/bookings/${d.booking.id}`}
+                            className="flex items-center justify-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-xs font-bold text-gray-600 transition-colors hover:bg-gray-50">
+                            <Eye size={13} /> Voir la demande
+                          </Link>
+                        )}
+                        {d.booking?.paiement?.escrow === 'held' && (
+                          <button
+                            onClick={() => handleRefund(d.id, d.booking.paiement.id)}
+                            disabled={!!actionLoading}
+                            className="rounded-lg bg-danger px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-red-600 disabled:opacity-50">
+                            {actionLoading === `refund-${d.id}` ? '…' : 'Rembourser'}
+                          </button>
+                        )}
+                        {!d.traite && (
+                          <button
+                            onClick={() => handleResolveDispute(d.id)}
+                            disabled={!!actionLoading}
+                            className="rounded-lg bg-secondary px-3 py-2 text-xs font-bold text-white transition-colors hover:bg-secondary-dark disabled:opacity-50">
+                            {actionLoading === `resolve-${d.id}` ? '…' : 'Marquer traité'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           )}
         </>
       )}

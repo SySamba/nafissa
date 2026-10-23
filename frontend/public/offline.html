@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NAFISSA — Hors connexion</title>
+    <style>
+      body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f7f7f4; color: #1f2937;
+             min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+      .card { text-align: center; padding: 2.5rem 2rem; max-width: 24rem; }
+      .logo { width: 64px; height: 64px; margin: 0 auto 1.25rem; border-radius: 1rem;
+              background: #44512f; color: #fff; display: flex; align-items: center; justify-content: center;
+              font-weight: 800; font-size: 1.75rem; }
+      h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
+      p { color: #6b7280; font-size: .875rem; line-height: 1.6; margin: 0 0 1.5rem; }
+      button { background: #44512f; color: #fff; border: 0; border-radius: .75rem;
+               padding: .75rem 1.5rem; font-size: .875rem; font-weight: 700; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="logo">N</div>
+      <h1>Vous êtes hors connexion</h1>
+      <p>NAFISSA a besoin d'une connexion internet pour afficher cette page. Vérifiez votre réseau puis réessayez.</p>
+      <button type="button" onclick="location.reload()">Réessayer</button>
+    </div>
+  </body>
+</html>
