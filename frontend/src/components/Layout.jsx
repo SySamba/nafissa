@@ -21,7 +21,6 @@ import {
   ClipboardList,
   CalendarDays,
   Wallet,
-  LifeBuoy,
 } from 'lucide-react';
 
 const ROLE_LABELS = {
@@ -63,6 +62,7 @@ export default function Layout({ children }) {
     const common = [
       { to: '/notifications', label: 'Notifications', desc: 'Quand une demande évolue ou qu\'une réservation est confirmée.', icon: Bell, badge: unreadCount },
       { to: '/profile', label: 'Mon profil', desc: 'Informations, adresse et coordonnées.', icon: User },
+      { href: '/', newTab: true, label: 'Voir le site', desc: 'Retourner sur la page d\'accueil.', icon: ExternalLink },
     ];
     if (!user) {
       return [
@@ -78,7 +78,6 @@ export default function Layout({ children }) {
         { to: '/bookings?vue=reservations', label: 'Mes réservations', desc: 'Interventions confirmées, passées ou annulées.', icon: CheckCircle },
         { to: '/payments', label: 'Mes paiements', desc: 'Montants, statuts de paiement et reçus disponibles.', icon: CreditCard },
         ...common,
-        { href: '/#contact', label: 'Aide et assistance', desc: 'Contacter l\'équipe Nafissa.', icon: LifeBuoy },
       ];
     }
     if (isAdmin) {
@@ -98,7 +97,6 @@ export default function Layout({ children }) {
       { to: '/planning', label: 'Mon planning', desc: 'Voir les dates et horaires des interventions.', icon: CalendarDays },
       { to: '/payments', label: 'Mes revenus', desc: 'Suivre les montants gagnés et les paiements reçus.', icon: Wallet },
       ...common,
-      { href: '/#contact', label: 'Aide et assistance', desc: 'Contacter l\'équipe Nafissa.', icon: LifeBuoy },
     ];
   })();
 
@@ -126,10 +124,12 @@ export default function Layout({ children }) {
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Menu</p>
-        {navLinks.map(({ to, href, label, desc, icon: Icon, badge }) => {
+        {navLinks.map(({ to, href, newTab, label, desc, icon: Icon, badge }) => {
           const active = to ? isActive(to) : false;
           const Tag = href ? 'a' : Link;
-          const linkProps = href ? { href } : { to };
+          const linkProps = href
+            ? { href, ...(newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {}) }
+            : { to };
           return (
             <Tag
               key={to ?? href}
@@ -162,20 +162,6 @@ export default function Layout({ children }) {
           );
         })}
       </nav>
-
-      {/* External link */}
-      <div className="px-3 pb-2">
-        <a
-          href="/"
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={closeMobile}
-          className="flex items-center gap-2.5 rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm font-semibold text-gray-600 transition-all hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
-        >
-          <ExternalLink size={17} />
-          Voir le site
-        </a>
-      </div>
 
       {/* User card */}
       <div className="border-t border-gray-100 px-3 py-3">
@@ -313,16 +299,6 @@ export default function Layout({ children }) {
                         <User size={16} />
                         Mon profil
                       </Link>
-                      <a
-                        href="/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        onClick={() => setUserMenuOpen(false)}
-                      >
-                        <ExternalLink size={16} />
-                        Voir le site
-                      </a>
                     </div>
                   </>
                 ) : null}
