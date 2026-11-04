@@ -104,7 +104,7 @@ INSERT INTO `categories` (`id`, `name`, `description`, `icon`, `active`, `create
 (1, 'Ménage', 'Services de nettoyage et entretien maison', 'home', 1, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
 (2, 'Garde d\'enfants', 'Baby-sitting et garde d\'enfants', 'baby', 1, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
 (3, 'Couture', 'Confection et retouches vestimentaires', 'scissors', 1, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
-(4, 'Cuisine', 'Préparation de repas à domicile', 'utensils', 1, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
+(4, 'Cuisine', 'Préparation de repas à domicile', 'utensils', 0, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
 (5, 'Soutien scolaire', 'Aide aux devoirs et cours particuliers', 'book-open', 1, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
 (6, 'Coiffure', 'Coiffure et soins capillaires à domicile', 'sparkles', 1, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
 (7, 'Plomberie', 'Réparations et installations plomberie', 'wrench', 1, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
@@ -386,7 +386,7 @@ INSERT INTO `services` (`id`, `provider_id`, `category_id`, `title`, `descriptio
 (3, 5, 1, 'Ménage complet appartement', 'Nettoyage approfondi maison ou appartement. Matériel fourni.', 7500.00, 'Parcelles Assainies, Dakar', 1, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
 (4, 5, 7, 'Dépannage plomberie', 'Réparation fuites, installation robinetterie. Intervention rapide.', 10000.00, 'Parcelles Assainies, Dakar', 1, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
 (5, 6, 3, 'Couture traditionnelle', 'Confection boubous, robes et tenues traditionnelles sénégalaises. Tissus wax et bazin.', 15000.00, 'Médina, Dakar', 1, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
-(6, 6, 4, 'Cuisine sénégalaise à domicile', 'Préparation de thiéboudienne, yassa, mafé et autres plats sénégalais.', 8000.00, 'Médina, Dakar', 1, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
+(6, 6, 4, 'Cuisine sénégalaise à domicile', 'Préparation de thiéboudienne, yassa, mafé et autres plats sénégalais.', 8000.00, 'Médina, Dakar', 0, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
 (7, 7, 6, 'Coiffure à domicile', 'Tresses, tissages et coiffures modernes. Spécialiste cheveux afro.', 5000.00, 'Grand Yoff, Dakar', 1, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
 (8, 7, 6, 'Soins capillaires naturels', 'Soins nourrissants, masques et traitements pour cheveux abîmés.', 4000.00, 'Grand Yoff, Dakar', 1, '2026-04-13 11:49:27', '2026-04-13 11:49:27'),
 (9, 6, 7, 'test', 'test', 25000.00, 'Fann, Dakar', 1, '2026-04-13 12:17:46', '2026-04-13 12:17:46');

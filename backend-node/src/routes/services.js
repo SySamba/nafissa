@@ -4,6 +4,7 @@ import { withHiddenProvider } from '../lib/serializers.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
 import { geocodeAddress } from '../lib/geocode.js';
+import { isRetiredCategory } from '../lib/constants.js';
 
 const includeList = {
   provider: { include: { profile: true } },
@@ -120,8 +121,8 @@ export default async function serviceRoutes(fastify) {
   });
 
   fastify.get('/categories', async () => {
-    const categories = await prisma.category.findMany({ where: { active: true } });
-    return { categories };
+    const rows = await prisma.category.findMany({ where: { active: true } });
+    return { categories: rows.filter((c) => !isRetiredCategory(c)) };
   });
 
   fastify.post('/services', { preHandler: authMiddleware }, async (request, reply) => {
@@ -142,6 +143,11 @@ export default async function serviceRoutes(fastify) {
     }
     if (!u.verified) {
       return reply.code(403).send({ message: 'Votre compte doit être validé par un administrateur.' });
+    }
+
+    const category = await prisma.category.findUnique({ where: { id: category_id } });
+    if (!category?.active || isRetiredCategory(category)) {
+      return reply.code(422).send({ message: "Cette catégorie n'est pas disponible." });
     }
 
     const coords = await geocodeAddress(location);
@@ -188,7 +194,13 @@ export default async function serviceRoutes(fastify) {
     if (!parsed.success) return reply.code(422).send({ message: 'Données invalides.' });
     const d = parsed.data;
     const data = {};
-    if (d.category_id !== undefined) data.categoryId = d.category_id;
+    if (d.category_id !== undefined) {
+      const category = await prisma.category.findUnique({ where: { id: d.category_id } });
+      if (!category?.active || isRetiredCategory(category)) {
+        return reply.code(422).send({ message: "Cette catégorie n'est pas disponible." });
+      }
+      data.categoryId = d.category_id;
+    }
     if (d.title !== undefined) data.title = d.title;
     if (d.description !== undefined) data.description = d.description;
     if (d.price !== undefined) data.price = d.price;

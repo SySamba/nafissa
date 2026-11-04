@@ -1,31 +1,15 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import BrandMark from '../components/BrandMark';
 import InstallPwa from '../components/InstallPwa';
+import { categoryAPI } from '../api/services';
 import {
   ArrowRight, Shield,
   Phone, MapPin, Mail, ChevronRight, Menu, X
 } from 'lucide-react';
-import { homepageCategoryVisual } from '../lib/categoryImages';
+import { categoryVisual } from '../lib/categoryImages';
 // Hero image depuis le dossier public/
-
-// Services prioritaires NAFISSA
-const PRIORITY_SERVICES = [
-  { slug: 'home', name: 'Ménage', desc: 'Nettoyage professionnel du domicile' },
-  { slug: 'laundry', name: 'Lavage & Repassage', desc: 'Linge lavé, séché et repassé' },
-  { slug: 'shopping', name: 'Course', desc: 'Vos achats du quotidien livrés' },
-  { slug: 'baby', name: 'Garde d\'enfant', desc: 'Nounous de confiance' },
-  { slug: 'utensils', name: 'Cuisine', desc: 'Repas faits maison' },
-];
-
-// Services secondaires NAFISSA
-const SECONDARY_SERVICES = [
-  { slug: 'book-open', name: 'Soutien scolaire', desc: 'Cours particuliers à domicile' },
-  { slug: 'zap', name: 'Électricien', desc: 'Installation & dépannage' },
-  { slug: 'plumber', name: 'Plombier', desc: 'Fuites, sanitaires, robinetterie' },
-  { slug: 'carpenter', name: 'Menuisier', desc: 'Bois, meubles & réparations' },
-];
 
 const WORKFLOW_STEPS = [
   { num: '1', title: 'Vous décrivez votre besoin', desc: 'Type de service, date, heure, lieu et détails : le formulaire prend tout.' },
@@ -35,12 +19,13 @@ const WORKFLOW_STEPS = [
   { num: '5', title: 'Paiement sécurisé', desc: 'Vous payez après acceptation ; le montant n\'est libéré qu\'une fois la mission confirmée.' },
 ];
 
-function renderServiceCard({ name, desc, slug }) {
-  const { image, gradient } = homepageCategoryVisual(slug);
+function renderServiceCard(category) {
+  const { name, description: desc } = category;
+  const { image, gradient } = categoryVisual(category);
   return (
     <Link
       to="/demande"
-      key={name}
+      key={String(category.id)}
       className="group flex flex-col overflow-hidden rounded-[1.4rem] border border-gray-200/90 bg-white shadow-md ring-1 ring-black/[0.04] hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
       <div className={`relative h-36 w-full shrink-0 overflow-hidden bg-gradient-to-br ${gradient} sm:h-44`}>
         {image && (
@@ -70,7 +55,19 @@ function renderServiceCard({ name, desc, slug }) {
 export default function Home() {
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
   const closeMenu = () => setMenuOpen(false);
+
+  // Les catégories affichées = les vraies catégories actives du système
+  // (aucune liste codée en dur : le retrait d'une catégorie se propage
+  // automatiquement à l'accueil, au formulaire et à l'admin).
+  useEffect(() => {
+    let cancelled = false;
+    categoryAPI.list()
+      .then(({ data }) => { if (!cancelled) setCategories(data.categories || []); })
+      .catch(() => { if (!cancelled) setCategories([]); });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
@@ -167,7 +164,7 @@ export default function Home() {
               </h1>
 
               <p className="mt-7 text-lg sm:text-xl text-gray-500 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-                Ménage, garde d&apos;enfants, cuisine, lavage… Décrivez votre besoin : <strong className="text-gray-700">notre équipe vous attribue un prestataire vérifié</strong>, proche et disponible.
+                Ménage, garde d&apos;enfants, couture, soutien scolaire… Décrivez votre besoin : <strong className="text-gray-700">notre équipe vous attribue un prestataire vérifié</strong>, proche et disponible.
               </p>
 
               {/* CTA Buttons */}
@@ -239,26 +236,8 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Services prioritaires */}
-          <div className="mb-6 flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-primary">
-              Services prioritaires
-            </span>
-            <span className="h-px flex-1 bg-gradient-to-r from-primary/20 to-transparent" />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
-            {PRIORITY_SERVICES.map((svc) => renderServiceCard(svc))}
-          </div>
-
-          {/* Services secondaires */}
-          <div className="mt-16 mb-6 flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/15 px-3 py-1 text-xs font-bold uppercase tracking-wide text-secondary-dark">
-              Services secondaires
-            </span>
-            <span className="h-px flex-1 bg-gradient-to-r from-secondary/30 to-transparent" />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {SECONDARY_SERVICES.map((svc) => renderServiceCard(svc))}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {categories.map((cat) => renderServiceCard(cat))}
           </div>
         </div>
       </section>
@@ -390,7 +369,7 @@ export default function Home() {
               />
             </div>
               <p className="text-gray-400 leading-relaxed max-w-sm">
-                La plateforme de confiance pour les services à domicile au Sénégal. Ménage, garde d&apos;enfants, cuisine et bien plus encore.
+                La plateforme de confiance pour les services à domicile au Sénégal. Ménage, garde d&apos;enfants, couture et bien plus encore.
               </p>
               <div className="flex items-center gap-4 mt-6">
                 <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Paiements via</span>

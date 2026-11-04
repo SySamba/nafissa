@@ -1,7 +1,7 @@
 # Présentation — GitHub & SonarCloud (projet NAFISSA)
 
-**À qui s’adresse ce document** : dirigeants, chefs de projet, membres de l’équipe technique et toute personne qui doit **comprendre le dispositif qualité**, sans jargon inutile.  
-**Objectif** : expliquer **l’utilité** de ces outils, **le déroulé** d’une mise à jour du code jusqu’au tableau SonarCloud, et **ce que nous considérons comme de bons indicateurs**.
+**À qui s’adresse ce document** : dirigeants, chefs de projet, membres de l’équipe technique et toute personne qui doit **comprendre le dispositif qualité**, sans jargon inutile.
+**Objectif** : expliquer **l’utilité** de ces outils, **le déroulé** d’une mise à jour du code u de jusqu’au tableau SonarCloud, et **ce que nous considérons comme de bons indicateurs**.
 
 ---
 
@@ -17,12 +17,12 @@ Si vous voyez bien le tableau de projet sur SonarCloud (analyse récente, indica
 
 ## 2. Pourquoi nous utilisons GitHub
 
-| Besoin organisationnel | Ce que GitHub apporte concrètement |
-|------------------------|-----------------------------------|
-| **Traçabilité** | Qui a modifié quoi et quand ; possibilité de revenir en arrière. |
-| **Travail à plusieurs** | Partage du même code maître, validations avant intégration. |
-| **Validation du code avant fusion** | Les demandes de fusion (*pull requests*) permettent une lecture du changement avant qu’il ne rejoigne la branche principale. |
-| **Automatisation** | **GitHub Actions** peut lancer automatiquement des contrôles (construction, tests, analyse de qualité) à chaque envoi vers le dépôt. |
+| Besoin organisationnel                    | Ce que GitHub apporte concrètement                                                                                                             |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Traçabilité**                   | Qui a modifié quoi et quand ; possibilité de revenir en arrière.                                                                             |
+| **Travail à plusieurs**            | Partage du même code maître, validations avant intégration.                                                                                  |
+| **Validation du code avant fusion** | Les demandes de fusion (*pull requests*) permettent une lecture du changement avant qu’il ne rejoigne la branche principale.                 |
+| **Automatisation**                  | **GitHub Actions** peut lancer automatiquement des contrôles (construction, tests, analyse de qualité) à chaque envoi vers le dépôt. |
 
 ---
 
@@ -30,8 +30,8 @@ Si vous voyez bien le tableau de projet sur SonarCloud (analyse récente, indica
 
 À chaque envoi (**push**) ou mise à jour d’une **demande de fusion**, notre fichier **`.github/workflows/ci.yml`** enchaîne notamment :
 
-1. **Interface web (*frontend*)** : vérifications de style, construction, tests avec fichier de couverture.  
-2. **API (*backend-node*)** : préparation de la couche données, puis tests avec couverture.  
+1. **Interface web (*frontend*)** : vérifications de style, construction, tests avec fichier de couverture.
+2. **API (*backend-node*)** : préparation de la couche données, puis tests avec couverture.
 3. **Analyse SonarCloud** : envoi du résultat des contrôles et des fichiers de couverture pour alimenter le tableau de bord.
 
 **Intérêt** : faire remonter un problème **tôt**, au moment où le changement est proposé, plutôt qu’après mise en ligne.
@@ -80,7 +80,7 @@ D’après le type de vue que vous avez (**Quality Gate**, notes par lettre, etc
 
 ### 6.1 Quality Gate (« seuil global »)
 
-- **Réussi (*Passed*)** : la configuration Sonar utilisée applique plusieurs conditions ; votre dernière analyse les respecte globalement pour la branche considérée (souvent *main* ou la branche liée au dépôt).  
+- **Réussi (*Passed*)** : la configuration Sonar utilisée applique plusieurs conditions ; votre dernière analyse les respecte globalement pour la branche considérée (souvent *main* ou la branche liée au dépôt).
 - **Échoué** : au moins une condition n’est pas remplise ; à traiter selon les règles internes avant une livraison sensible.
 
 Une **Quality Gate verte** peut coexister avec une **note de sécurité basse (*E*, par exemple)** sur tout le code accumulé sur la durée : les conditions du seuil portent souvent sur le **nouveau** code ou des limites différentes. Il convient donc de lire aussi la section **problèmes de sécurité** et leur gravité (**bloquant**, **élevée**, etc.).
@@ -89,18 +89,18 @@ Une **Quality Gate verte** peut coexister avec une **note de sécurité basse (*
 
 Résumées par domaine : **sécurité**, **fiabilité**, **maintenabilité** (les libellés peuvent être en français ou en anglais selon votre interface).
 
-| Lettre | Lecture simple |
-|--------|----------------|
-| **A** | Situation forte sur cet axe pour le périmètre mesuré |
-| **B** | Satisfaisante — quelques anomalies à corriger progressivement |
-| **C** | À surveiller — planifier des actions |
-| **D–E** | Situation sérieuse à planifier (surtout sécurité) |
+| Lettre         | Lecture simple                                                  |
+| -------------- | --------------------------------------------------------------- |
+| **A**    | Situation forte sur cet axe pour le périmètre mesuré         |
+| **B**    | Satisfaisante — quelques anomalies à corriger progressivement |
+| **C**    | À surveiller — planifier des actions                          |
+| **D–E** | Situation sérieuse à planifier (surtout sécurité)           |
 
 Une note **« UN » ou non affichée** sur la **maintenabilité** peut apparaître selon versions ou filtres : se fier surtout au **nombre d’anomalies** et à leur évolution dans le temps.
 
 ### 6.3 Couverture par les tests (« Couverture »)
 
-Elle mesure **quelle part du code source déclaré** est traversée au moins une fois par les tests automatisés.  
+Elle mesure **quelle part du code source déclaré** est traversée au moins une fois par les tests automatisés.
 Si le message indiquait « **aucune donnée** », c’est en général un **écart entre les chemins des fichiers** dans les rapports de tests et ceux analysés — corrigé côté intégration continue pour nos prochains envois ; après le prochain cycle d’analyse, un pourcentage devrait pouvoir apparaître une fois les rapports correctement reliés aux fichiers.
 
 ---
@@ -109,14 +109,14 @@ Si le message indiquait « **aucune donnée** », c’est en général un **éca
 
 Ces niveaux peuvent être ajustés ensemble avec le pilote technique ; ils servent **d’alignement**.
 
-| Domaine | Cible générale | Commentaire |
-|---------|-----------------|------------|
-| **Quality Gate** | Maintenir **Réussi** sur la branche principale | En cas d’échec, traiter avant une livraison critique. |
-| **Sécurité** | Améliorer la note et **réduire** les anomalies **bloquantes** et **élevées** sur le **nouveau** code | Traiter les points **à réviser** (*hotspots*) dans l’interface. |
-| **Fiabilité** | Note **A** ou **B**, baisse du nombre d’anomalies ouvertes | Prioriser le **bloquant** et l’**élevé**. |
-| **Maintenabilité** | Progression maîtrisée | Ne pas viser zéro anomalie immédiatement : **réduire** la dette par itérations. |
-| **Couverture** | Progression sur le long terme (ex. **au‑delà de 50 %** puis objectif plus haut) | Le pourcentage seul ne suffit pas ; il accompagne les tests existants. |
-| **Duplications** | Rester sous les limites fixées par le seuil Sonar ou par l’équipe | Moins de copier‑coller limite les erreurs répétées. |
+| Domaine                   | Cible générale                                                                                                                 | Commentaire                                                                                |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Quality Gate**    | Maintenir **Réussi** sur la branche principale                                                                            | En cas d’échec, traiter avant une livraison critique.                                    |
+| **Sécurité**      | Améliorer la note et **réduire** les anomalies **bloquantes** et **élevées** sur le **nouveau** code | Traiter les points **à réviser** (*hotspots*) dans l’interface.                 |
+| **Fiabilité**      | Note **A** ou **B**, baisse du nombre d’anomalies ouvertes                                                          | Prioriser le **bloquant** et l’**élevé**.                                   |
+| **Maintenabilité** | Progression maîtrisée                                                                                                          | Ne pas viser zéro anomalie immédiatement : **réduire** la dette par itérations. |
+| **Couverture**      | Progression sur le long terme (ex. **au‑delà de 50 %** puis objectif plus haut)                                         | Le pourcentage seul ne suffit pas ; il accompagne les tests existants.                    |
+| **Duplications**    | Rester sous les limites fixées par le seuil Sonar ou par l’équipe                                                             | Moins de copier‑coller limite les erreurs répétées.                                    |
 
 **Principe utile** : **ne pas dégrader** le nouveau code — traiter d’abord ce qui est introduit par les derniers changements, puis assainir l’historique.
 
@@ -126,7 +126,7 @@ Ces niveaux peuvent être ajustés ensemble avec le pilote technique ; ils ser
 
 SonarCloud **n’envoie pas systématiquement** un courriel à chaque analyse. Les alertes dépendent de votre **compte** et des **abonnements** :
 
-- **Mon compte** → **Notifications** (ou équivalent) : activer les alertes souhaitées (échec de seuil, nouveaux problèmes, etc.).  
+- **Mon compte** → **Notifications** (ou équivalent) : activer les alertes souhaitées (échec de seuil, nouveaux problèmes, etc.).
 - Vérifier les **indésirables** (*courrier indésirable*) et l’adresse utilisée pour le compte.
 
 Le suivi le plus fiable reste d’ouvrir le **projet** sur SonarCloud et l’onglet **Actions** sur GitHub pour voir si la dernière exécution s’est bien terminée.
@@ -141,18 +141,18 @@ Cela indique un caractère non autorisé (souvent un **é** ou un texte collé p
 
 ## 10. Synthèse
 
-- **GitHub** centralise le code et déclenche les contrôles automatiques.  
-- **SonarCloud** fournit une **photo** et une **suite** mesurable de qualité et de sécurité.  
+- **GitHub** centralise le code et déclenche les contrôles automatiques.
+- **SonarCloud** fournit une **photo** et une **suite** mesurable de qualité et de sécurité.
 - **De bons résultats** pour nous : seuil principal **Réussi**, amélioration continue des anomalies **les plus graves**, hotspots de sécurité **revus**, et couverture des tests qui **augmente**.
 
 ---
 
 ## 11. Documents du dépôt
 
-| Fichier | Utilité |
-|---------|---------|
-| `GUIDE_UTILISATION.md` | Installation et utilisation de l’application. |
-| `GUIDE_SONARQUBE.md` | Détail technique Sonar et intégration continue. |
+| Fichier                                          | Utilité                                                                          |
+| ------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `GUIDE_UTILISATION.md`                         | Installation et utilisation de l’application.                                    |
+| `GUIDE_SONARQUBE.md`                           | Détail technique Sonar et intégration continue.                                 |
 | `PRESENTATION_SONAR_CLOUD_GITHUB_ACTIONS.docx` | Version Word pour réunion ou partage (régénérée depuis ce fichier Markdown). |
 
 Régénérer le fichier Word après modification de ce fichier :

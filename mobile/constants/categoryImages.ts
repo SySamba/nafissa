@@ -45,12 +45,6 @@ const VISUALS: Record<string, CategoryVisual> = {
     icon: 'cut',
     image: require('@/assets/images/categories/scissors.jpg'),
   },
-  utensils: {
-    colors: ['#C9A15A', '#5E6E42'],
-    emoji: '🍳',
-    icon: 'restaurant',
-    image: require('@/assets/images/categories/utensils.jpg'),
-  },
   'book-open': {
     colors: ['#44512F', '#C9A15A'],
     emoji: '📚',
@@ -102,7 +96,6 @@ const BY_NAME_HINT: [RegExp, string][] = [
   [/m[eé]nage|nettoyage/i, 'home'],
   [/garde|nounou|enfant/i, 'baby'],
   [/coiff/i, 'scissors'],
-  [/cuisine|repas/i, 'utensils'],
   [/scolaire|cours|soutien/i, 'book-open'],
   [/beaut[eé]|bien/i, 'sparkles'],
   [/plomb/i, 'plumber'],

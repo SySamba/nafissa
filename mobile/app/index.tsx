@@ -21,7 +21,6 @@ const PRIORITY_SERVICES = [
   { key: 'laundry', name: 'Lavage & Repassage', desc: 'Linge lavé et repassé' },
   { key: 'shopping', name: 'Courses', desc: 'Achats du quotidien livrés' },
   { key: 'baby', name: "Garde d'enfant", desc: 'Nounous de confiance' },
-  { key: 'utensils', name: 'Cuisine', desc: 'Repas faits maison' },
 ];
 
 const SECONDARY_SERVICES = [
@@ -97,7 +96,7 @@ export default function Index() {
             <Text style={styles.heroTitleAccent}>simplifié</Text>
           </Text>
           <Text style={styles.heroSub}>
-            Ménage, garde d'enfants, cuisine, lavage… Trouvez des prestataires{' '}
+            Ménage, garde d'enfants, couture, soutien scolaire… Trouvez des prestataires{' '}
             <Text style={{ fontWeight: '800', color: Colors.light.text }}>vérifiés et notés</Text> pour tous vos
             besoins, en toute confiance.
           </Text>

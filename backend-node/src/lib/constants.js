@@ -22,3 +22,14 @@ export const ES = {
 };
 
 export const COMMISSION_RATE = 0.1;
+
+/**
+ * Catégories retirées de l'offre NAFISSA : invisibles dans les listes
+ * publiques et refusées à la création de demande, même si la ligne est
+ * encore marquée active en base (sécurise le retrait avant migration).
+ */
+const RETIRED_CATEGORY_NAMES = ['cuisine'];
+
+export function isRetiredCategory(category) {
+  return !!category && RETIRED_CATEGORY_NAMES.includes(String(category.name || '').toLowerCase());
+}

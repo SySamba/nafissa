@@ -2,7 +2,7 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { prisma } from '../lib/prisma.js';
-import { BS } from '../lib/constants.js';
+import { BS, isRetiredCategory } from '../lib/constants.js';
 import { notify, notifyAdmins, bookingDetailPath } from '../lib/notifications.js';
 import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
@@ -150,7 +150,7 @@ export default async function bookingRoutes(fastify) {
       categoryId = service.categoryId;
     } else {
       const category = await prisma.category.findUnique({ where: { id: v.category_id } });
-      if (!category?.active) return reply.code(422).send({ message: "Cette catégorie n'existe pas." });
+      if (!category?.active || isRetiredCategory(category)) return reply.code(422).send({ message: "Cette catégorie n'existe pas." });
       categoryId = category.id;
     }
 

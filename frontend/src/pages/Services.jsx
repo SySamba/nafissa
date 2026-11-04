@@ -7,7 +7,7 @@ import { categoryVisual } from '../lib/categoryImages';
 import { priceUnitSuffix } from '../lib/pricing';
 
 const ICON_MAP = {
-  home: '🏠', baby: '👶', scissors: '✂️', utensils: '🍳',
+  home: '🏠', baby: '👶', scissors: '✂️',
   'book-open': '📚', sparkles: '✨', wrench: '🔧', zap: '⚡',
 };
 export default function Services() {

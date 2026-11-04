@@ -64,7 +64,7 @@ export default function AuthShell({ title, subtitle, children, wide = false }) {
           </h2>
 
           <p className="mt-5 max-w-md text-[15px] leading-relaxed text-white/70 xl:text-base">
-            Ménage, garde d&apos;enfants, cuisine, lavage… des intervenants sélectionnés, près de chez
+            Ménage, garde d&apos;enfants, couture, soutien scolaire… des intervenants sélectionnés, près de chez
             vous, partout au Sénégal.
           </p>
 

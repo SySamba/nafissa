@@ -73,7 +73,7 @@ export default function Layout({ children }) {
     if (isMaman) {
       return [
         { to: '/dashboard', label: 'Tableau de bord', desc: 'Résumé des demandes, réservations et prochaines interventions.', icon: Home },
-        { to: '/demande', label: 'Nouvelle demande', desc: 'Décrire un besoin de ménage, cuisine, garde d\'enfants ou autre service.', icon: FilePlus2 },
+        { to: '/demande', label: 'Nouvelle demande', desc: 'Décrire un besoin de ménage, garde d\'enfants ou autre service.', icon: FilePlus2 },
         { to: '/bookings', label: 'Mes demandes', desc: 'Demandes en attente, en cours d\'attribution ou traitées.', icon: ClipboardList },
         { to: '/bookings?vue=reservations', label: 'Mes réservations', desc: 'Interventions confirmées, passées ou annulées.', icon: CheckCircle },
         { to: '/payments', label: 'Mes paiements', desc: 'Montants, statuts de paiement et reçus disponibles.', icon: CreditCard },
