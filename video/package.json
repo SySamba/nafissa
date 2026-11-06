@@ -1,0 +1,17 @@
+{
+  "name": "nafissa-video",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render",
+    "render:all": "remotion render Lancement out/nafissa-lancement.mp4 && remotion render LancementMobile out/nafissa-lancement-mobile.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.0",
+    "@remotion/google-fonts": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "^4.0.0"
+  }
+}
