@@ -35,3 +35,4 @@ backend/
 # Outils
 *.swp
 *.swo
+video/out/
