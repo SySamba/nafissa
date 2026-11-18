@@ -7,6 +7,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { bookingAPI, categoryAPI, geoAPI } from '../api/services';
 import BrandMark from '../components/BrandMark';
+import MapPicker from '../components/MapPicker';
 import { categoryVisual } from '../lib/categoryImages';
 import { groupCategories } from '../lib/serviceGroups';
 
@@ -40,11 +41,11 @@ function Section({ num, title, hint, children }) {
   );
 }
 
-function mapEmbedUrl(lat, lng) {
-  const d = 0.004;
-  const bbox = [lng - d, lat - d, lng + d, lat + d].join(',');
-  return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lng}`;
-}
+const POSITION_LABELS = {
+  gps: 'Position GPS',
+  search: 'Adresse localisée',
+  map: 'Position choisie sur la carte',
+};
 
 const GEO_ERRORS = {
   1: "Accès à la position refusé. Autorisez la localisation dans votre navigateur, ou saisissez l'adresse.",
@@ -122,18 +123,30 @@ export default function Demande() {
       setPosition({ lat: data.lat, lng: data.lng, source: 'search' });
     } catch {
       setPosition(null);
-      setGeoError("Adresse introuvable sur la carte. Précisez le quartier ou utilisez votre position.");
+      setGeoError("Adresse introuvable. Touchez directement votre position sur la carte.");
     } finally {
       setGeoStatus('idle');
+    }
+  };
+
+  // Clic ou déplacement du marqueur sur la carte → position exacte + adresse.
+  const pickOnMap = async (lat, lng) => {
+    setGeoError('');
+    setPosition({ lat, lng, source: 'map' });
+    try {
+      const { data } = await geoAPI.reverse(lat, lng);
+      if (data.label) setForm((p) => ({ ...p, location: data.label }));
+    } catch {
+      // Le point reste enregistré même si l'adresse n'est pas résolue.
     }
   };
 
   const onLocationChange = (e) => {
     const value = e.target.value;
     setForm((p) => ({ ...p, location: value }));
-    // Une position trouvée par recherche ne correspond plus au texte modifié ;
-    // une position GPS reste valable (on affine seulement le libellé).
-    if (position?.source === 'search') setPosition(null);
+    // Une position issue de la recherche ou de la carte ne correspond plus
+    // au texte modifié ; une position GPS reste valable (on affine le libellé).
+    if (position && position.source !== 'gps') setPosition(null);
   };
 
   const submit = async (e) => {
@@ -221,8 +234,8 @@ export default function Demande() {
         </div>
       </nav>
 
-      <main className="pt-28 pb-16 px-4 sm:px-6">
-        <div className="max-w-3xl mx-auto">
+      <main className="pt-28 pb-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
             <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary">
               Demande en 2 minutes
@@ -246,7 +259,7 @@ export default function Demande() {
                   {groups.map((g) => (
                     <div key={g.key}>
                       <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-400">{g.label}</p>
-                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                         {g.categories.map((cat) => {
                           const active = String(cat.id) === String(form.category_id);
                           const { image, gradient } = categoryVisual(cat);
@@ -354,90 +367,101 @@ export default function Demande() {
 
             {/* 3 — Où */}
             <Section num="3" title="Où ?" hint="Le lieu exact nous permet de choisir un prestataire proche de chez vous.">
-              <button
-                type="button"
-                onClick={locateMe}
-                disabled={geoStatus === 'locating'}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-3.5 text-sm font-bold text-primary transition-all hover:border-primary hover:bg-primary/10 disabled:opacity-60"
-              >
-                {geoStatus === 'locating'
-                  ? <><Loader2 size={18} className="animate-spin" /> Localisation en cours…</>
-                  : <><LocateFixed size={18} /> Je suis sur le lieu : utiliser ma position</>}
-              </button>
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <div>
+                  <button
+                    type="button"
+                    onClick={locateMe}
+                    disabled={geoStatus === 'locating'}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-3.5 text-sm font-bold text-primary transition-all hover:border-primary hover:bg-primary/10 disabled:opacity-60"
+                  >
+                    {geoStatus === 'locating'
+                      ? <><Loader2 size={18} className="animate-spin" /> Localisation en cours…</>
+                      : <><LocateFixed size={18} /> Je suis sur le lieu : utiliser ma position</>}
+                  </button>
 
-              <div className="my-4 flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                <span className="h-px flex-1 bg-gray-200" /> ou saisissez l&apos;adresse <span className="h-px flex-1 bg-gray-200" />
-              </div>
+                  <div className="my-4 flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    <span className="h-px flex-1 bg-gray-200" /> ou saisissez l&apos;adresse <span className="h-px flex-1 bg-gray-200" />
+                  </div>
 
-              <label htmlFor="location" className="block text-sm font-semibold text-gray-800 mb-1.5">
-                Lieu d&apos;intervention (quartier, adresse) *
-              </label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                  <input
-                    id="location" type="text" required maxLength={200}
-                    value={form.location} onChange={onLocationChange}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); locateAddress(); } }}
-                    placeholder="Ex : Mermoz, Sacré-Cœur 3, Niary Tally…"
-                    className={inputCls}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={locateAddress}
-                  disabled={geoStatus === 'searching' || form.location.trim().length < 2}
-                  className="flex shrink-0 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 text-sm font-semibold text-gray-600 transition hover:border-primary hover:text-primary disabled:opacity-50"
-                  aria-label="Localiser l'adresse sur la carte"
-                >
-                  {geoStatus === 'searching' ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
-                  <span className="hidden sm:inline">Localiser</span>
-                </button>
-              </div>
-
-              {geoError && (
-                <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">{geoError}</p>
-              )}
-
-              {position && (
-                <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200">
-                  <iframe
-                    title="Lieu d'intervention sur la carte"
-                    src={mapEmbedUrl(position.lat, position.lng)}
-                    className="block h-56 w-full sm:h-64"
-                    loading="lazy"
-                  />
-                  <div className="flex flex-wrap items-center justify-between gap-2 bg-gray-50 px-4 py-2.5 text-xs">
-                    <span className={`inline-flex items-center gap-1.5 font-semibold ${position.source === 'gps' ? 'text-green-700' : 'text-gray-600'}`}>
-                      <span className={`h-2 w-2 rounded-full ${position.source === 'gps' ? 'bg-green-500' : 'bg-amber-400'}`} />
-                      {position.source === 'gps'
-                        ? `Position GPS précise${position.accuracy ? ` (± ${position.accuracy} m)` : ''}`
-                        : 'Position approximative de l\u2019adresse'}
-                    </span>
-                    <a
-                      href={`https://www.google.com/maps?q=${position.lat},${position.lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                  <label htmlFor="location" className="block text-sm font-semibold text-gray-800 mb-1.5">
+                    Lieu d&apos;intervention (quartier, adresse) *
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                      <input
+                        id="location" type="text" required maxLength={200}
+                        value={form.location} onChange={onLocationChange}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); locateAddress(); } }}
+                        placeholder="Ex : Mermoz, Sacré-Cœur 3, Niary Tally…"
+                        className={inputCls}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={locateAddress}
+                      disabled={geoStatus === 'searching' || form.location.trim().length < 2}
+                      className="flex shrink-0 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 text-sm font-semibold text-gray-600 transition hover:border-primary hover:text-primary disabled:opacity-50"
+                      aria-label="Localiser l'adresse sur la carte"
                     >
-                      Vérifier sur Google Maps <ExternalLink size={12} />
-                    </a>
+                      {geoStatus === 'searching' ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
+                      <span className="hidden sm:inline">Localiser</span>
+                    </button>
+                  </div>
+
+                  {geoError && (
+                    <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">{geoError}</p>
+                  )}
+
+                  <div className="mt-4">
+                    <label htmlFor="landmark" className="block text-sm font-semibold text-gray-800 mb-1.5">
+                      Point de repère <span className="font-normal text-muted">(conseillé)</span>
+                    </label>
+                    <div className="relative">
+                      <Flag size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                      <input
+                        id="landmark" type="text" maxLength={80}
+                        value={form.landmark} onChange={set('landmark')}
+                        placeholder="Ex : près de la mosquée, portail bleu, 2e étage…"
+                        className={inputCls}
+                      />
+                    </div>
                   </div>
                 </div>
-              )}
 
-              <div className="mt-4">
-                <label htmlFor="landmark" className="block text-sm font-semibold text-gray-800 mb-1.5">
-                  Point de repère <span className="font-normal text-muted">(conseillé)</span>
-                </label>
-                <div className="relative">
-                  <Flag size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-                  <input
-                    id="landmark" type="text" maxLength={80}
-                    value={form.landmark} onChange={set('landmark')}
-                    placeholder="Ex : près de la mosquée, portail bleu, 2e étage…"
-                    className={inputCls}
-                  />
+                <div className="overflow-hidden rounded-2xl border border-gray-200">
+                  <div className="relative h-64 w-full lg:h-full lg:min-h-[22rem]">
+                    <MapPicker position={position} onPick={pickOnMap} className="absolute inset-0" />
+                    {!position && (
+                      <div className="pointer-events-none absolute inset-x-0 top-3 z-[500] flex justify-center">
+                        <span className="rounded-full bg-white/95 px-3.5 py-1.5 text-xs font-bold text-gray-700 shadow-md ring-1 ring-black/5">
+                          Touchez la carte pour placer le lieu exact
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 bg-gray-50 px-4 py-2.5 text-xs">
+                    {position ? (
+                      <>
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-green-700">
+                          <span className="h-2 w-2 rounded-full bg-green-500" />
+                          {POSITION_LABELS[position.source] || 'Position enregistrée'}
+                          {position.source === 'gps' && position.accuracy ? ` (± ${position.accuracy} m)` : ''}
+                        </span>
+                        <a
+                          href={`https://www.google.com/maps?q=${position.lat},${position.lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                        >
+                          Vérifier sur Google Maps <ExternalLink size={12} />
+                        </a>
+                      </>
+                    ) : (
+                      <span className="font-medium text-gray-500">Cliquez sur la carte, utilisez votre position GPS ou localisez l&apos;adresse.</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </Section>

@@ -29,7 +29,7 @@ function renderServiceCard(category) {
       to={`/demande?categorie=${category.id}`}
       key={String(category.id)}
       className="group flex flex-col overflow-hidden rounded-[1.4rem] border border-gray-200/90 bg-white shadow-md ring-1 ring-black/[0.04] hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
-      <div className={`relative h-36 w-full shrink-0 overflow-hidden bg-gradient-to-br ${gradient} sm:h-44`}>
+      <div className={`relative h-32 w-full shrink-0 overflow-hidden bg-gradient-to-br ${gradient} sm:h-36`}>
         {image && (
           <img
             src={image}
@@ -153,17 +153,17 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════
           HERO
       ═══════════════════════════════════════════════════════════ */}
-      <section className="relative isolate pt-32 pb-16 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24 overflow-hidden">
+      <section className="relative isolate pt-28 pb-10 sm:pt-32 sm:pb-14 lg:pt-36 lg:pb-16 overflow-hidden">
         {/* Fond 100 % CSS (aucune image distante → toujours affiché) */}
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-[#EFEBE2] via-bg to-white" />
         <div className="absolute -top-32 -left-24 -z-10 h-[34rem] w-[34rem] rounded-full bg-primary/15 blur-3xl" />
         <div className="absolute -top-10 right-0 -z-10 h-[30rem] w-[30rem] rounded-full bg-secondary/15 blur-3xl" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-10">
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-8">
             {/* Colonne texte */}
             <div className="text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 bg-white/85 border border-secondary/35 text-gray-900 px-5 py-2 rounded-full text-sm font-semibold mb-7 shadow-md backdrop-blur-sm">
+              <div className="inline-flex items-center gap-2 bg-white/85 border border-secondary/35 text-gray-900 px-5 py-2 rounded-full text-sm font-semibold mb-5 shadow-md backdrop-blur-sm">
                 <span>Services à domicile de confiance</span>
               </div>
 
@@ -175,12 +175,12 @@ export default function Home() {
                 </span>
               </h1>
 
-              <p className="mt-7 text-lg sm:text-xl text-gray-500 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              <p className="mt-5 text-lg sm:text-xl text-gray-500 max-w-xl mx-auto lg:mx-0 leading-relaxed">
                 Ménage, garde d&apos;enfants, couture, soutien scolaire… Décrivez votre besoin : <strong className="text-gray-700">notre équipe vous attribue un prestataire vérifié</strong>, proche et disponible.
               </p>
 
               {/* CTA Buttons */}
-              <div className="mt-9 flex flex-col sm:flex-row items-center lg:items-start lg:justify-start justify-center gap-4">
+              <div className="mt-7 flex flex-col sm:flex-row items-center lg:items-start lg:justify-start justify-center gap-4">
                 <Link to="/demande" className="w-full sm:w-auto group inline-flex items-center justify-center gap-2.5 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary text-white px-8 py-4 rounded-2xl text-base font-bold transition-all shadow-2xl shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-0.5 active:translate-y-0">
                   Faire une demande <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
@@ -221,7 +221,7 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════
           TRUST BANNER
       ═══════════════════════════════════════════════════════════ */}
-      <section className="border-y border-gray-100 bg-gray-50/50 py-6">
+      <section className="border-y border-gray-100 bg-gray-50/50 py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-3 text-sm font-medium text-gray-400">
             <span>Prestataires vérifiés</span>
@@ -236,9 +236,9 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════
           CATEGORIES / SERVICES
       ═══════════════════════════════════════════════════════════ */}
-      <section id="services" className="py-20 sm:py-28">
+      <section id="services" className="py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <span className="inline-block text-secondary font-bold text-sm uppercase tracking-wider mb-3">Nos services</span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900">
               Tout pour votre <span className="text-primary">famille</span>
@@ -248,10 +248,10 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="space-y-14">
+          <div className="space-y-10">
             {groupCategories(categories).map((g) => (
               <div key={g.key}>
-                <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900">{g.label}</h3>
                     <p className="mt-1 text-sm text-gray-500">{g.desc}</p>
@@ -260,7 +260,7 @@ export default function Home() {
                     {g.categories.length} service{g.categories.length > 1 ? 's' : ''}
                   </span>
                 </div>
-                <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-4">
                   {g.categories.map((cat) => renderServiceCard(cat))}
                 </div>
               </div>
@@ -272,9 +272,9 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════
           HOW IT WORKS
       ═══════════════════════════════════════════════════════════ */}
-      <section id="how" className="py-20 sm:py-28 bg-gradient-to-b from-gray-50/80 to-white">
+      <section id="how" className="py-12 sm:py-16 bg-gradient-to-b from-gray-50/80 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <span className="inline-block text-primary font-bold text-sm uppercase tracking-wider mb-3">Comment ça marche</span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900">
               De la demande à <span className="text-secondary">l&apos;intervention</span>
@@ -292,7 +292,7 @@ export default function Home() {
                     <div className="w-full h-full bg-gradient-to-r from-primary/25 to-secondary/25 rounded-full" />
                   </div>
                 )}
-                <div className="relative z-[1] bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl hover:border-primary/20 transition-all duration-300 h-full flex flex-col">
+                <div className="relative z-[1] bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-xl hover:border-primary/20 transition-all duration-300 h-full flex flex-col">
                   <div className="mb-4">
                     <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-extrabold text-white shadow-lg shadow-primary/20">
                       {num}
@@ -310,9 +310,9 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════
           WHY CHOOSE US
       ═══════════════════════════════════════════════════════════ */}
-      <section className="py-20 sm:py-28">
+      <section className="py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <span className="inline-block text-secondary font-bold text-sm uppercase tracking-wider mb-3">Nos garanties</span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900">
               Pourquoi choisir <span className="text-primary">Nafissa</span> ?
@@ -320,7 +320,7 @@ export default function Home() {
             <p className="mt-4 text-gray-500 text-lg max-w-xl mx-auto">La confiance et la qualité au cœur de chaque service</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
                 title: 'Prestataires vérifiés',
@@ -335,7 +335,7 @@ export default function Home() {
                 desc: 'Suivez l\'avancement de votre demande étape par étape, de l\'attribution du prestataire à la fin de la mission.',
               },
             ].map(({ title, desc }) => (
-              <div key={title} className="group bg-white border border-gray-100 rounded-2xl p-8 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+              <div key={title} className="group bg-white border border-gray-100 rounded-2xl p-6 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
                 <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-primary transition-colors">{title}</h3>
                 <p className="text-gray-500 leading-relaxed">{desc}</p>
               </div>
@@ -347,7 +347,7 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════
           CTA
       ═══════════════════════════════════════════════════════════ */}
-      <section className="py-20 sm:py-28">
+      <section className="py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="relative rounded-3xl overflow-hidden">
             {/* Gradient background */}
@@ -357,14 +357,14 @@ export default function Home() {
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full translate-y-1/3 -translate-x-1/4 blur-2xl" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-primary-light/10 rounded-full blur-3xl" />
 
-            <div className="relative px-8 py-16 sm:px-16 sm:py-20 text-center">
+            <div className="relative px-8 py-12 sm:px-14 sm:py-14 text-center">
               <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-full text-white/90 text-sm font-medium mb-6">
                 Rejoignez la communauté
               </div>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white mb-5 leading-tight">
                 Prêt(e) à simplifier<br className="hidden sm:block" /> votre quotidien ?
               </h2>
-              <p className="text-white/70 text-lg mb-10 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-white/70 text-lg mb-8 max-w-2xl mx-auto leading-relaxed">
                 Rejoignez Nafissa et accédez à des services de qualité, rendus par des prestataires vérifiés, en toute confiance.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -383,9 +383,9 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════════════════
           FOOTER
       ═══════════════════════════════════════════════════════════ */}
-      <footer id="contact" className="bg-gray-950 text-white pt-16 pb-8">
+      <footer id="contact" className="bg-gray-950 text-white pt-12 pb-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-white/10">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-8 border-b border-white/10">
             {/* Brand */}
             <div className="md:col-span-5">
             <div className="mb-5">
@@ -430,7 +430,7 @@ export default function Home() {
           </div>
 
           {/* Bottom bar */}
-          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
+          <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-500">
             <p>&copy; {new Date().getFullYear()} Nafissa. Tous droits réservés.</p>
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
               <Link to="/cgu" className="hover:text-white transition-colors">CGU</Link>
