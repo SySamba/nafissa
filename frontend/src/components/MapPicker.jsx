@@ -30,9 +30,12 @@ export default function MapPicker({ position, onPick, className = '' }) {
       zoom: position ? 16 : 12,
       scrollWheelZoom: true,
     });
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap',
+    // Tuiles Carto (données OpenStreetMap) — autorisées en production,
+    // contrairement aux serveurs tuiles OSM qui bloquent les apps (403).
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      maxZoom: 20,
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
     }).addTo(map);
 
     const place = (lat, lng) => {
