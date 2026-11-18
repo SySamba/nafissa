@@ -38,12 +38,11 @@ export default function MapPicker({ position, className = '' }) {
       zoom: position ? 16 : 12,
       scrollWheelZoom: true,
     });
-    // Tuiles Carto (données OpenStreetMap) — autorisées en production,
-    // contrairement aux serveurs tuiles OSM qui bloquent les apps (403).
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 20,
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
+    // Tuiles Esri World Street Map (données OSM enrichies) — gratuites,
+    // sans clé API : OSM bloque les apps (403) et Carto exige une clé.
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, OpenStreetMap',
     }).addTo(map);
 
     const place = (lat, lng) => {
