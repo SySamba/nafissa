@@ -5,16 +5,24 @@ import 'leaflet/dist/leaflet.css';
 // Centre par défaut : Dakar
 const DEFAULT_CENTER = [14.6937, -17.4441];
 
-const markerIcon = L.divIcon({
-  className: '',
-  html: '<div style="width:22px;height:22px;border-radius:50% 50% 50% 0;background:#44512F;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);transform:rotate(-45deg);margin-left:-11px;margin-top:-22px"></div>',
-  iconSize: [0, 0],
-});
+const PIN_STYLE = {
+  radius: 11,
+  color: '#fff',
+  weight: 3,
+  fillColor: '#44512F',
+  fillOpacity: 1,
+};
+const HALO_STYLE = {
+  radius: 22,
+  color: '#44512F',
+  weight: 1.5,
+  fillColor: '#44512F',
+  fillOpacity: 0.15,
+};
 
 /**
- * Carte Leaflet cliquable : un clic (ou un glisser du marqueur) place la
- * position exacte et appelle onPick(lat, lng). Tuiles OpenStreetMap,
- * aucune clé API requise.
+ * Carte Leaflet cliquable : un clic place le point et appelle
+ * onPick(lat, lng). Tuiles Carto (données OpenStreetMap), sans clé API.
  */
 export default function MapPicker({ position, onPick, className = '' }) {
   const ref = useRef(null);
@@ -25,7 +33,8 @@ export default function MapPicker({ position, onPick, className = '' }) {
 
   useEffect(() => {
     if (mapRef.current || !ref.current) return;
-    const map = L.map(ref.current, {
+    const el = ref.current;
+    const map = L.map(el, {
       center: position ? [position.lat, position.lng] : DEFAULT_CENTER,
       zoom: position ? 16 : 12,
       scrollWheelZoom: true,
@@ -37,15 +46,17 @@ export default function MapPicker({ position, onPick, className = '' }) {
       maxZoom: 20,
       attribution: '&copy; OpenStreetMap &copy; CARTO',
     }).addTo(map);
+    // Curseur en croix : signale que la carte est cliquable.
+    el.style.cursor = 'crosshair';
 
     const place = (lat, lng) => {
-      if (markerRef.current) markerRef.current.setLatLng([lat, lng]);
-      else {
-        markerRef.current = L.marker([lat, lng], { icon: markerIcon, draggable: true }).addTo(map);
-        markerRef.current.on('dragend', () => {
-          const p = markerRef.current.getLatLng();
-          onPickRef.current(p.lat, p.lng);
-        });
+      if (markerRef.current) {
+        markerRef.current.pin.setLatLng([lat, lng]);
+        markerRef.current.halo.setLatLng([lat, lng]);
+      } else {
+        const halo = L.circleMarker([lat, lng], HALO_STYLE).addTo(map);
+        const pin = L.circleMarker([lat, lng], PIN_STYLE).addTo(map);
+        markerRef.current = { pin, halo };
       }
     };
 
@@ -56,9 +67,17 @@ export default function MapPicker({ position, onPick, className = '' }) {
 
     if (position) place(position.lat, position.lng);
     mapRef.current = { map, place };
-    // Leaflet mesure la taille au montage : recalcule après l'affichage.
-    setTimeout(() => map.invalidateSize(), 150);
-    return () => { map.remove(); mapRef.current = null; markerRef.current = null; };
+    // La taille du conteneur peut se stabiliser après le montage.
+    const ro = new ResizeObserver(() => map.invalidateSize());
+    ro.observe(el);
+    const t = setTimeout(() => map.invalidateSize(), 200);
+    return () => {
+      clearTimeout(t);
+      ro.disconnect();
+      map.remove();
+      mapRef.current = null;
+      markerRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
