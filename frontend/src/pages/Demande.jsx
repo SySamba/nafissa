@@ -44,7 +44,6 @@ function Section({ num, title, hint, children }) {
 const POSITION_LABELS = {
   gps: 'Position GPS',
   search: 'Adresse localisée',
-  map: 'Position choisie sur la carte',
 };
 
 const GEO_ERRORS = {
@@ -129,24 +128,12 @@ export default function Demande() {
     }
   };
 
-  // Clic ou déplacement du marqueur sur la carte → position exacte + adresse.
-  const pickOnMap = async (lat, lng) => {
-    setGeoError('');
-    setPosition({ lat, lng, source: 'map' });
-    try {
-      const { data } = await geoAPI.reverse(lat, lng);
-      if (data.label) setForm((p) => ({ ...p, location: data.label }));
-    } catch {
-      // Le point reste enregistré même si l'adresse n'est pas résolue.
-    }
-  };
-
   const onLocationChange = (e) => {
     const value = e.target.value;
     setForm((p) => ({ ...p, location: value }));
-    // Une position issue de la recherche ou de la carte ne correspond plus
-    // au texte modifié ; une position GPS reste valable (on affine le libellé).
-    if (position && position.source !== 'gps') setPosition(null);
+    // Une position issue de la recherche ne correspond plus au texte modifié ;
+    // une position GPS reste valable (on affine seulement le libellé).
+    if (position && position.source === 'search') setPosition(null);
   };
 
   const submit = async (e) => {
@@ -367,7 +354,7 @@ export default function Demande() {
 
             {/* 3 — Où */}
             <Section num="3" title="Où ?" hint="Le lieu exact nous permet de choisir un prestataire proche de chez vous.">
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <div className={`grid grid-cols-1 gap-5 ${position ? 'lg:grid-cols-2' : ''}`}>
                 <div>
                   <button
                     type="button"
@@ -430,39 +417,28 @@ export default function Demande() {
                   </div>
                 </div>
 
-                <div className="overflow-hidden rounded-2xl border border-gray-200">
-                  <div className="relative h-64 w-full lg:h-full lg:min-h-[22rem]">
-                    <MapPicker position={position} onPick={pickOnMap} className="absolute inset-0" />
-                    {!position && (
-                      <div className="pointer-events-none absolute inset-x-0 top-3 z-[500] flex justify-center">
-                        <span className="rounded-full bg-white/95 px-3.5 py-1.5 text-xs font-bold text-gray-700 shadow-md ring-1 ring-black/5">
-                          Touchez la carte pour placer le lieu exact
-                        </span>
-                      </div>
-                    )}
+                {position && (
+                  <div className="overflow-hidden rounded-2xl border border-gray-200">
+                    <div className="relative h-64 w-full lg:h-full lg:min-h-[22rem]">
+                      <MapPicker position={position} className="absolute inset-0" />
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 bg-gray-50 px-4 py-2.5 text-xs">
+                      <span className="inline-flex items-center gap-1.5 font-semibold text-green-700">
+                        <span className="h-2 w-2 rounded-full bg-green-500" />
+                        {POSITION_LABELS[position.source] || 'Position enregistrée'}
+                        {position.source === 'gps' && position.accuracy ? ` (± ${position.accuracy} m)` : ''}
+                      </span>
+                      <a
+                        href={`https://www.google.com/maps?q=${position.lat},${position.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                      >
+                        Vérifier sur Google Maps <ExternalLink size={12} />
+                      </a>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 bg-gray-50 px-4 py-2.5 text-xs">
-                    {position ? (
-                      <>
-                        <span className="inline-flex items-center gap-1.5 font-semibold text-green-700">
-                          <span className="h-2 w-2 rounded-full bg-green-500" />
-                          {POSITION_LABELS[position.source] || 'Position enregistrée'}
-                          {position.source === 'gps' && position.accuracy ? ` (± ${position.accuracy} m)` : ''}
-                        </span>
-                        <a
-                          href={`https://www.google.com/maps?q=${position.lat},${position.lng}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
-                        >
-                          Vérifier sur Google Maps <ExternalLink size={12} />
-                        </a>
-                      </>
-                    ) : (
-                      <span className="font-medium text-gray-500">Cliquez sur la carte, utilisez votre position GPS ou localisez l&apos;adresse.</span>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
             </Section>
 

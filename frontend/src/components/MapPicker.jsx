@@ -21,15 +21,14 @@ const HALO_STYLE = {
 };
 
 /**
- * Carte Leaflet cliquable : un clic place le point et appelle
- * onPick(lat, lng). Tuiles Carto (données OpenStreetMap), sans clé API.
+ * Carte Leaflet en lecture seule : affiche un point (GPS ou adresse
+ * localisée) avec recentrage automatique. Tuiles Carto (données
+ * OpenStreetMap), sans clé API.
  */
-export default function MapPicker({ position, onPick, className = '' }) {
+export default function MapPicker({ position, className = '' }) {
   const ref = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
-  const onPickRef = useRef(onPick);
-  useEffect(() => { onPickRef.current = onPick; }, [onPick]);
 
   useEffect(() => {
     if (mapRef.current || !ref.current) return;
@@ -46,8 +45,6 @@ export default function MapPicker({ position, onPick, className = '' }) {
       maxZoom: 20,
       attribution: '&copy; OpenStreetMap &copy; CARTO',
     }).addTo(map);
-    // Curseur en croix : signale que la carte est cliquable.
-    el.style.cursor = 'crosshair';
 
     const place = (lat, lng) => {
       if (markerRef.current) {
@@ -59,11 +56,6 @@ export default function MapPicker({ position, onPick, className = '' }) {
         markerRef.current = { pin, halo };
       }
     };
-
-    map.on('click', (e) => {
-      place(e.latlng.lat, e.latlng.lng);
-      onPickRef.current(e.latlng.lat, e.latlng.lng);
-    });
 
     if (position) place(position.lat, position.lng);
     mapRef.current = { map, place };
@@ -81,7 +73,7 @@ export default function MapPicker({ position, onPick, className = '' }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // La position change depuis l'extérieur (GPS / recherche) → recentrer.
+  // La position change (GPS / recherche d'adresse) → recentrer.
   useEffect(() => {
     if (!mapRef.current || !position) return;
     mapRef.current.place(position.lat, position.lng);
