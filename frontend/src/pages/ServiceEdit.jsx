@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { serviceAPI, categoryAPI } from '../api/services';
 import { ArrowLeft, Save } from 'lucide-react';
 import { priceUnitOptions } from '../lib/pricing';
+import { groupCategories } from '../lib/serviceGroups';
 
 export default function ServiceEdit() {
   const { id } = useParams();
@@ -84,7 +85,11 @@ export default function ServiceEdit() {
             <select id="category_id" name="category_id" required value={form.category_id} onChange={handleChange}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary">
               <option value="">Sélectionner une catégorie</option>
-              {categories.map((cat) => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
+              {groupCategories(categories).map((g) => (
+                <optgroup key={g.key} label={g.label}>
+                  {g.categories.map((cat) => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
+                </optgroup>
+              ))}
             </select>
             {errors.category_id && <p className="text-xs text-danger mt-1">{errors.category_id[0]}</p>}
           </div>

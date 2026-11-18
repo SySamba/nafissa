@@ -29,6 +29,11 @@ export const categoryAPI = {
   list: () => apiClient.get('/categories'),
 };
 
+export const geoAPI = {
+  reverse: (lat, lng) => apiClient.get('/geo/reverse', { params: { lat, lng } }),
+  search: (q) => apiClient.get('/geo/search', { params: { q } }),
+};
+
 /** Stats publiques (vivier prestataires / offres) pour le tableau de bord cliente */
 export const marketAPI = {
   summary: () => apiClient.get('/market/summary'),

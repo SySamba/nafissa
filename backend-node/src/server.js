@@ -18,6 +18,7 @@ import notificationRoutes from './routes/notifications.js';
 import adminRoutes from './routes/admin.js';
 import marketRoutes from './routes/market.js';
 import trackingRoutes from './routes/tracking.js';
+import geoRoutes from './routes/geo.js';
 
 dotenv.config();
 
@@ -94,6 +95,7 @@ export async function buildApp() {
   await fastify.register(authRoutes, apiOpts);
   await fastify.register(marketRoutes, apiOpts);
   await fastify.register(trackingRoutes, apiOpts);
+  await fastify.register(geoRoutes, apiOpts);
   await fastify.register(serviceRoutes, apiOpts);
   await fastify.register(bookingRoutes, apiOpts);
   await fastify.register(paymentRoutes, apiOpts);

@@ -30,6 +30,21 @@ export const COMMISSION_RATE = 0.1;
  */
 const RETIRED_CATEGORY_NAMES = ['cuisine'];
 
+/**
+ * Type de services d'une catégorie (même règle que le frontend,
+ * frontend/src/lib/serviceGroups.js). Un prestataire = un seul type.
+ */
+const GROUP_RULES = [
+  [/scolaire|soutien|cours|devoirs/i, 'soutien'],
+  [/plomb|[ée]lectri|menuis|r[ée]paration|d[ée]pann|bricol|peint|ma[çc]on|clim|froid/i, 'technique'],
+];
+
+export function serviceGroupOf(category) {
+  const name = String(category?.name || '');
+  const hit = GROUP_RULES.find(([re]) => re.test(name));
+  return hit ? hit[1] : 'personnel';
+}
+
 export function isRetiredCategory(category) {
   return !!category && RETIRED_CATEGORY_NAMES.includes(String(category.name || '').toLowerCase());
 }

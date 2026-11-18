@@ -114,6 +114,8 @@ export default async function bookingRoutes(fastify) {
       description: z.string().max(2000).optional().nullable(),
       guest_name: z.string().max(100).optional().nullable(),
       guest_phone: z.string().max(30).optional().nullable(),
+      lat: z.coerce.number().min(-90).max(90).optional().nullable(),
+      lng: z.coerce.number().min(-180).max(180).optional().nullable(),
     });
     const parsed = schema.safeParse(request.body || {});
     if (!parsed.success) return reply.code(422).send({ message: 'Données invalides.' });
@@ -162,7 +164,11 @@ export default async function bookingRoutes(fastify) {
     }
 
     // Géocodage du lieu d'intervention : quartier local ou OpenStreetMap.
-    const coords = await geocodeAddress(v.location ?? client.address);
+    // Position GPS exacte (bouton « Utiliser ma position ») prioritaire sur
+    // le géocodage du texte saisi.
+    const coords = v.lat != null && v.lng != null
+      ? { lat: v.lat, lng: v.lng }
+      : await geocodeAddress(v.location ?? client.address);
 
     const booking = await prisma.booking.create({
       data: {

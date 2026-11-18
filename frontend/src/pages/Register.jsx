@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { categoryAPI } from '../api/services';
 import { categoryVisual } from '../lib/categoryImages';
+import { groupCategories, groupLabel, serviceGroupOf } from '../lib/serviceGroups';
 import AuthShell from '../components/AuthShell';
 import { UserPlus, Mail, Lock, Eye, EyeOff, Phone, User, MapPin, Upload, Camera, Calendar, Check, ArrowRight, IdCard, AlertCircle, ShieldAlert } from 'lucide-react';
 
@@ -112,8 +113,16 @@ export default function Register() {
       .catch(() => {});
   }, []);
 
-  const toggleCategory = (id) => {
-    const key = String(id);
+  const groups = useMemo(() => groupCategories(categories), [categories]);
+  // Type verrouillé par la première sélection : un prestataire = un seul type.
+  const lockedGroup = useMemo(() => {
+    const first = categories.find((c) => selectedCategories.includes(String(c.id)));
+    return first ? serviceGroupOf(first) : null;
+  }, [categories, selectedCategories]);
+
+  const toggleCategory = (cat) => {
+    const key = String(cat.id);
+    if (!selectedCategories.includes(key) && lockedGroup && serviceGroupOf(cat) !== lockedGroup) return;
     setSelectedCategories((prev) =>
       prev.includes(key) ? prev.filter((c) => c !== key) : [...prev, key]
     );
@@ -413,7 +422,8 @@ export default function Register() {
           <>
             <SectionTitle icon={Check}>{SECTION_TITLES.services}</SectionTitle>
             <p className="mb-3 text-xs leading-relaxed text-gray-500">
-              Sélectionnez une ou plusieurs catégories. Vous fixerez les prix après la validation de votre compte.
+              Choisissez <strong className="text-gray-700">un seul type de services</strong>, puis un ou plusieurs
+              services de ce type. Vous fixerez les prix après la validation de votre compte.
             </p>
             {categories.length === 0 ? (
               <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -422,39 +432,63 @@ export default function Register() {
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-                {categories.map((cat) => {
-                  const active = selectedCategories.includes(String(cat.id));
-                  const { emoji } = categoryVisual(cat);
+              <div className="space-y-4">
+                {groups.map((g) => {
+                  const disabledGroup = lockedGroup && lockedGroup !== g.key;
                   return (
-                    <button
-                      type="button"
-                      key={cat.id}
-                      aria-pressed={active}
-                      onClick={() => toggleCategory(cat.id)}
-                      className={`relative flex items-center gap-2 rounded-xl border-2 px-3 py-3 text-left text-sm font-semibold transition-all ${
-                        active
-                          ? 'border-secondary bg-secondary/10 text-secondary-dark'
-                          : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50/60'
-                      }`}
+                    <div
+                      key={g.key}
+                      className={`rounded-2xl border p-3 transition-all ${
+                        lockedGroup === g.key ? 'border-secondary/40 bg-secondary/5' : 'border-gray-100'
+                      } ${disabledGroup ? 'opacity-45' : ''}`}
                     >
-                      <span className="text-lg leading-none" aria-hidden>{emoji}</span>
-                      <span className="truncate">{cat.name}</span>
-                      {active && (
-                        <span className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary text-white">
-                          <Check size={12} strokeWidth={3} />
-                        </span>
-                      )}
-                    </button>
+                      <div className="mb-2.5 flex items-baseline justify-between gap-2 px-1">
+                        <p className="text-sm font-bold text-gray-800">{g.label}</p>
+                        <p className="text-[11px] text-gray-400">{g.desc}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                        {g.categories.map((cat) => {
+                          const active = selectedCategories.includes(String(cat.id));
+                          const { emoji } = categoryVisual(cat);
+                          return (
+                            <button
+                              type="button"
+                              key={cat.id}
+                              aria-pressed={active}
+                              disabled={!!disabledGroup}
+                              onClick={() => toggleCategory(cat)}
+                              className={`relative flex items-center gap-2 rounded-xl border-2 bg-white px-3 py-3 text-left text-sm font-semibold transition-all disabled:cursor-not-allowed ${
+                                active
+                                  ? 'border-secondary bg-secondary/10 text-secondary-dark'
+                                  : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50/60'
+                              }`}
+                            >
+                              <span className="text-lg leading-none" aria-hidden>{emoji}</span>
+                              <span className="truncate">{cat.name}</span>
+                              {active && (
+                                <span className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary text-white">
+                                  <Check size={12} strokeWidth={3} />
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
             )}
             {selectedCategories.length > 0 && (
-              <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1 text-xs font-bold text-secondary-dark">
-                <Check size={12} strokeWidth={3} />
-                {selectedCategories.length} service{selectedCategories.length > 1 ? 's' : ''} sélectionné{selectedCategories.length > 1 ? 's' : ''}
-              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <p className="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1 text-xs font-bold text-secondary-dark">
+                  <Check size={12} strokeWidth={3} />
+                  {groupLabel(lockedGroup)} · {selectedCategories.length} service{selectedCategories.length > 1 ? 's' : ''}
+                </p>
+                <p className="text-[11px] text-gray-400">
+                  Pour changer de type, désélectionnez d&apos;abord vos services.
+                </p>
+              </div>
             )}
           </>
         )}

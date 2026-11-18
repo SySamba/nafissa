@@ -9,6 +9,7 @@ import {
   Phone, MapPin, Mail, ChevronRight, Menu, X
 } from 'lucide-react';
 import { categoryVisual } from '../lib/categoryImages';
+import { groupCategories, serviceDetails } from '../lib/serviceGroups';
 // Hero image depuis le dossier public/
 
 const WORKFLOW_STEPS = [
@@ -20,11 +21,12 @@ const WORKFLOW_STEPS = [
 ];
 
 function renderServiceCard(category) {
-  const { name, description: desc } = category;
+  const { name } = category;
   const { image, gradient } = categoryVisual(category);
+  const { text, points } = serviceDetails(category);
   return (
     <Link
-      to="/demande"
+      to={`/demande?categorie=${category.id}`}
       key={String(category.id)}
       className="group flex flex-col overflow-hidden rounded-[1.4rem] border border-gray-200/90 bg-white shadow-md ring-1 ring-black/[0.04] hover:-translate-y-1 hover:shadow-2xl transition-all duration-300">
       <div className={`relative h-36 w-full shrink-0 overflow-hidden bg-gradient-to-br ${gradient} sm:h-44`}>
@@ -41,8 +43,18 @@ function renderServiceCard(category) {
           <p className="text-base font-bold text-white drop-shadow">{name}</p>
         </div>
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <p className="text-sm text-gray-500 line-clamp-2">{desc}</p>
+      <div className="flex flex-1 flex-col gap-2.5 p-4">
+        <p className="text-sm leading-relaxed text-gray-600">{text}</p>
+        {points.length > 0 && (
+          <ul className="space-y-1">
+            {points.map((pt) => (
+              <li key={pt} className="flex items-start gap-1.5 text-xs text-gray-500">
+                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-secondary" aria-hidden />
+                {pt}
+              </li>
+            ))}
+          </ul>
+        )}
         <div className="flex items-center justify-between gap-2 mt-auto pt-2 border-t border-gray-50">
           <span className="text-xs font-bold text-primary">Faire une demande</span>
           <ArrowRight size={18} className="text-gray-400 group-hover:text-secondary group-hover:translate-x-0.5 transition-all" aria-hidden />
@@ -236,8 +248,23 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {categories.map((cat) => renderServiceCard(cat))}
+          <div className="space-y-14">
+            {groupCategories(categories).map((g) => (
+              <div key={g.key}>
+                <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <h3 className="text-xl sm:text-2xl font-extrabold text-gray-900">{g.label}</h3>
+                    <p className="mt-1 text-sm text-gray-500">{g.desc}</p>
+                  </div>
+                  <span className="text-xs font-semibold text-gray-400">
+                    {g.categories.length} service{g.categories.length > 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 min-[420px]:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                  {g.categories.map((cat) => renderServiceCard(cat))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

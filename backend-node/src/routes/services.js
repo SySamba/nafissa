@@ -4,7 +4,19 @@ import { withHiddenProvider } from '../lib/serializers.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { laravelPaginated, fullResourcePath } from '../lib/pagination.js';
 import { geocodeAddress } from '../lib/geocode.js';
-import { isRetiredCategory } from '../lib/constants.js';
+import { isRetiredCategory, serviceGroupOf } from '../lib/constants.js';
+
+/** Un prestataire ne propose qu'un seul type de services. */
+async function conflictsWithProviderType(providerId, category, exceptServiceId) {
+  const others = await prisma.service.findMany({
+    where: { providerId, ...(exceptServiceId ? { id: { not: exceptServiceId } } : {}) },
+    include: { category: true },
+  });
+  const group = serviceGroupOf(category);
+  return others.some((s) => s.category && serviceGroupOf(s.category) !== group);
+}
+const TYPE_CONFLICT_MSG =
+  'Vous proposez déjà un autre type de services. Un compte prestataire ne peut proposer qu\u2019un seul type (services à la personne, techniques ou soutien scolaire).';
 
 const includeList = {
   provider: { include: { profile: true } },
@@ -149,6 +161,9 @@ export default async function serviceRoutes(fastify) {
     if (!category?.active || isRetiredCategory(category)) {
       return reply.code(422).send({ message: "Cette catégorie n'est pas disponible." });
     }
+    if (await conflictsWithProviderType(u.id, category)) {
+      return reply.code(422).send({ message: TYPE_CONFLICT_MSG });
+    }
 
     const coords = await geocodeAddress(location);
 
@@ -198,6 +213,9 @@ export default async function serviceRoutes(fastify) {
       const category = await prisma.category.findUnique({ where: { id: d.category_id } });
       if (!category?.active || isRetiredCategory(category)) {
         return reply.code(422).send({ message: "Cette catégorie n'est pas disponible." });
+      }
+      if (await conflictsWithProviderType(existing.providerId, category, id)) {
+        return reply.code(422).send({ message: TYPE_CONFLICT_MSG });
       }
       data.categoryId = d.category_id;
     }

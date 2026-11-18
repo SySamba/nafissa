@@ -15,6 +15,7 @@ import { notify } from '../lib/notifications.js';
 import { stripUser, userWithProfile } from '../lib/serializers.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { geocodeAddress } from '../lib/geocode.js';
+import { isRetiredCategory, serviceGroupOf } from '../lib/constants.js';
 
 /**
  * Forme canonique d'un numéro sénégalais : « +221 » + 9 chiffres locaux.
@@ -250,6 +251,20 @@ export default async function authRoutes(fastify) {
       }
     }
 
+    // Services choisis par un prestataire : catégories actives, et toutes
+    // du même type (services à la personne, techniques ou soutien scolaire).
+    let chosenCategories = [];
+    if (v.role !== 'maman' && v.category_ids?.length) {
+      const ids = [...new Set(v.category_ids.map(String))].filter((s) => /^\d+$/.test(s)).map(BigInt);
+      const rows = await prisma.category.findMany({ where: { id: { in: ids }, active: true } });
+      chosenCategories = rows.filter((c) => !isRetiredCategory(c));
+      if (new Set(chosenCategories.map(serviceGroupOf)).size > 1) {
+        return reply.code(422).send({
+          message: 'Choisissez des services d\u2019un seul type (services à la personne, techniques ou soutien scolaire).',
+        });
+      }
+    }
+
     let photoPath = null;
     let idRecto = null;
     let idVerso = null;
@@ -306,6 +321,24 @@ export default async function authRoutes(fastify) {
         return reply.code(422).send({ message: 'Cet email est déjà utilisé pour ce type de compte.' });
       }
       throw err;
+    }
+
+    // Annonces brouillon (inactives, prix à fixer) : le prestataire les
+    // complète et les active depuis « Mes services » après validation.
+    if (chosenCategories.length) {
+      await prisma.service.createMany({
+        data: chosenCategories.map((c) => ({
+          providerId: user.id,
+          categoryId: c.id,
+          title: c.name,
+          price: 0,
+          priceUnit: 'mission',
+          location: v.address || null,
+          lat: coords?.lat ?? null,
+          lng: coords?.lng ?? null,
+          available: false,
+        })),
+      });
     }
 
     await notify(user.id, 'account', 'Bienvenue sur Nafissa !', 'Votre compte a été créé avec succès.', '/dashboard');
