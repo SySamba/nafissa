@@ -36,6 +36,38 @@ export async function geocodeAddress(text, { skipRemote = false } = {}) {
 }
 
 /**
+ * Suggestions d'adresses pour l'autocomplétion du formulaire de demande.
+ * Renvoie jusqu'à `limit` lieux au Sénégal : [{ lat, lng, label }].
+ */
+export async function searchAddresses(text, { limit = 6 } = {}) {
+  const q = String(text || '').trim();
+  if (q.length < 3) return [];
+  try {
+    const url =
+      `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=sn&accept-language=fr` +
+      `&limit=${limit}&q=${encodeURIComponent(/dakar|senegal|sénégal/i.test(q) ? q : `${q}, Dakar, Sénégal`)}`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'nafissa-platform/1.0 (suggestions adresses, Dakar)' },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return [];
+    const hits = await res.json();
+    const seen = new Set();
+    return (hits || [])
+      .map((h) => {
+        const parts = String(h.display_name || '').split(',').map((s) => s.trim());
+        // Libellé court : nom du lieu + 2 niveaux de contexte, sans doublons.
+        const label = [...new Set(parts.slice(0, 4))].join(', ');
+        return { lat: Number(h.lat), lng: Number(h.lon), label };
+      })
+      .filter((h) => h.label && Number.isFinite(h.lat) && Number.isFinite(h.lng))
+      .filter((h) => (seen.has(h.label) ? false : (seen.add(h.label), true)));
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Coordonnées → adresse lisible (« Rue 10, Mermoz, Dakar »), via Nominatim.
  * Renvoie null si le service ne répond pas.
  */

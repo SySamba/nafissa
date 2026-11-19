@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Calendar, Clock, MapPin, FileText, User, Phone, ArrowLeft, CheckCircle2, Send,
@@ -8,7 +8,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { bookingAPI, categoryAPI, geoAPI } from '../api/services';
 import BrandMark from '../components/BrandMark';
 import MapPicker from '../components/MapPicker';
-import { categoryVisual } from '../lib/categoryImages';
 import { groupCategories } from '../lib/serviceGroups';
 
 const DURATIONS = [
@@ -72,6 +71,10 @@ export default function Demande() {
   const [position, setPosition] = useState(null);
   const [geoStatus, setGeoStatus] = useState('idle'); // idle | locating | searching
   const [geoError, setGeoError] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const suggestTimer = useRef(null);
+  const skipSuggest = useRef(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [sent, setSent] = useState(null);
@@ -98,7 +101,10 @@ export default function Demande() {
         setPosition(pos);
         try {
           const { data } = await geoAPI.reverse(pos.lat, pos.lng);
-          if (data.label) setForm((p) => ({ ...p, location: data.label }));
+          if (data.label) {
+            skipSuggest.current = true;
+            setForm((p) => ({ ...p, location: data.label }));
+          }
         } catch {
           // Adresse non résolue : la position GPS reste enregistrée.
         }
@@ -112,21 +118,51 @@ export default function Demande() {
     );
   };
 
-  const locateAddress = async () => {
-    const q = form.location.trim();
-    if (q.length < 2) return;
-    setGeoError('');
+  // Suggestions de lieux : frappe dans le champ (débounce) ou bouton Localiser.
+  const fetchSuggestions = async (q) => {
     setGeoStatus('searching');
     try {
-      const { data } = await geoAPI.search(q);
-      setPosition({ lat: data.lat, lng: data.lng, source: 'search' });
+      const { data } = await geoAPI.suggest(q);
+      const results = data.results || [];
+      setSuggestions(results);
+      setSuggestOpen(results.length > 0);
+      if (results.length === 0) setGeoError("Aucun lieu trouvé. Précisez le quartier ou utilisez votre position.");
+      return results;
     } catch {
-      setPosition(null);
-      setGeoError("Adresse introuvable. Touchez directement votre position sur la carte.");
+      setSuggestions([]);
+      setSuggestOpen(false);
+      setGeoError("Recherche impossible pour le moment. Réessayez ou utilisez votre position.");
+      return [];
     } finally {
       setGeoStatus('idle');
     }
   };
+
+  const locateAddress = () => {
+    const q = form.location.trim();
+    if (q.length < 2) return;
+    setGeoError('');
+    fetchSuggestions(q);
+  };
+
+  // Un clic sur un lieu suggéré : adresse remplie + carte centrée.
+  const pickSuggestion = (s) => {
+    skipSuggest.current = true;
+    setSuggestions([]);
+    setSuggestOpen(false);
+    setGeoError('');
+    setForm((p) => ({ ...p, location: s.label }));
+    setPosition({ lat: s.lat, lng: s.lng, source: 'search' });
+  };
+
+  useEffect(() => {
+    clearTimeout(suggestTimer.current);
+    if (skipSuggest.current) { skipSuggest.current = false; return; }
+    const q = form.location.trim();
+    if (q.length < 3) { setSuggestions([]); setSuggestOpen(false); return; }
+    suggestTimer.current = setTimeout(() => { fetchSuggestions(q); }, 350);
+    return () => clearTimeout(suggestTimer.current);
+  }, [form.location]);
 
   const onLocationChange = (e) => {
     const value = e.target.value;
@@ -249,27 +285,21 @@ export default function Demande() {
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                         {g.categories.map((cat) => {
                           const active = String(cat.id) === String(form.category_id);
-                          const { image, gradient } = categoryVisual(cat);
                           return (
                             <button
                               key={cat.id}
                               type="button"
                               aria-pressed={active}
                               onClick={() => setForm((p) => ({ ...p, category_id: String(cat.id) }))}
-                              className={`group relative flex items-center gap-3 overflow-hidden rounded-2xl border-2 p-2.5 text-left transition-all ${
+                              className={`relative flex items-center justify-center rounded-xl border-2 px-3 py-3.5 text-center transition-all ${
                                 active
-                                  ? 'border-primary bg-primary/5 shadow-md shadow-primary/10'
-                                  : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'
+                                  ? 'border-primary bg-primary text-white shadow-md shadow-primary/20'
+                                  : 'border-gray-200 bg-white text-gray-800 hover:border-primary/50 hover:text-primary'
                               }`}
                             >
-                              <span className={`h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br ${gradient}`}>
-                                {image && <img src={image} alt="" className="h-full w-full object-cover" />}
-                              </span>
-                              <span className={`text-sm font-bold leading-tight ${active ? 'text-primary' : 'text-gray-800'}`}>
-                                {cat.name}
-                              </span>
+                              <span className="text-sm font-bold leading-tight">{cat.name}</span>
                               {active && (
-                                <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white">
+                                <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-white shadow">
                                   <Check size={12} strokeWidth={3} />
                                 </span>
                               )}
@@ -379,11 +409,35 @@ export default function Demande() {
                       <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
                       <input
                         id="location" type="text" required maxLength={200}
+                        autoComplete="off"
                         value={form.location} onChange={onLocationChange}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); locateAddress(); } }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') { e.preventDefault(); locateAddress(); }
+                          if (e.key === 'Escape') { setSuggestOpen(false); }
+                        }}
+                        onFocus={() => { if (suggestions.length > 0) setSuggestOpen(true); }}
                         placeholder="Ex : Mermoz, Sacré-Cœur 3, Niary Tally…"
                         className={inputCls}
                       />
+                      {suggestOpen && suggestions.length > 0 && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setSuggestOpen(false)} />
+                          <ul className="absolute inset-x-0 top-full z-20 mt-1.5 max-h-64 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-xl">
+                            {suggestions.map((s, i) => (
+                              <li key={`${s.lat}-${s.lng}-${i}`}>
+                                <button
+                                  type="button"
+                                  onClick={() => pickSuggestion(s)}
+                                  className="flex w-full items-start gap-2.5 px-3.5 py-2.5 text-left transition-colors hover:bg-primary/5"
+                                >
+                                  <MapPin size={15} className="mt-0.5 shrink-0 text-primary" />
+                                  <span className="text-sm text-gray-700">{s.label}</span>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
                     </div>
                     <button
                       type="button"

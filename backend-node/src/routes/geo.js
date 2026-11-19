@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { geocodeAddress, reverseGeocode } from '../lib/geocode.js';
+import { geocodeAddress, reverseGeocode, searchAddresses } from '../lib/geocode.js';
 
 /**
  * Aides de localisation du formulaire de demande (publiques, limitées) :
@@ -18,6 +18,13 @@ export default async function geoRoutes(fastify) {
     const { lat, lng } = parsed.data;
     const hit = await reverseGeocode(lat, lng);
     return { lat, lng, label: hit?.label ?? null, full: hit?.full ?? null };
+  });
+
+  fastify.get('/geo/suggest', limited, async (request, reply) => {
+    const parsed = z.object({ q: z.string().trim().min(2).max(255) }).safeParse(request.query || {});
+    if (!parsed.success) return reply.code(422).send({ message: 'Adresse invalide.' });
+    const results = await searchAddresses(parsed.data.q);
+    return { results };
   });
 
   fastify.get('/geo/search', limited, async (request, reply) => {

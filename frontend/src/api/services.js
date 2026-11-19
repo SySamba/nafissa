@@ -32,6 +32,7 @@ export const categoryAPI = {
 export const geoAPI = {
   reverse: (lat, lng) => apiClient.get('/geo/reverse', { params: { lat, lng } }),
   search: (q) => apiClient.get('/geo/search', { params: { q } }),
+  suggest: (q) => apiClient.get('/geo/suggest', { params: { q } }),
 };
 
 /** Stats publiques (vivier prestataires / offres) pour le tableau de bord cliente */
